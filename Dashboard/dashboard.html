@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>Painel - Index Celulares</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="../Img/logo.jpeg">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+
+<div class="app">
+
+    <!-- ====================== MENU LATERAL ====================== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="marca">
+            <img src="../Img/logo.jpeg" alt="">
+            <div>
+                <div class="marca-nome">Index Celulares</div>
+                <div class="marca-sub">Assistência técnica</div>
+            </div>
+            <button type="button" class="botao-encolher" id="botaoEncolher" title="Encolher menu" aria-label="Encolher menu">
+                <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+        </div>
+
+        <nav>
+            <ul class="menu">
+                <li><a href="#inicio" class="active" data-secao="inicio" title="Início">
+                    <svg class="menu-icone" viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V21h-6v-6H9v6H3z"/></svg>
+                    <span class="rotulo-menu">Início</span></a></li>
+                <li><a href="#pdv-inicio" data-secao="pdv-inicio" title="PDV (F2 abre a venda)">
+                    <svg class="menu-icone" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="12" rx="2"/><path d="M6 20h12M9 16v4M15 16v4M6 8h5M6 11h3"/></svg>
+                    <span class="rotulo-menu">PDV <kbd class="menu-tecla">F2</kbd></span></a></li>
+                <li><a href="#os" data-secao="os" title="Ordens de Serviço">
+                    <svg class="menu-icone" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 13h6M9 17h6"/></svg>
+                    <span class="rotulo-menu">Ordens de Serviço</span></a></li>
+                <!--
+                  Grupos (v9): o que e do dia a dia fica solto; o resto mora num
+                  grupo que abre e fecha (nucleo.js, "Menu em grupos"). O grupo
+                  da secao aberta abre sozinho. O id da secao (data-secao) nao
+                  muda: #pedidos e a tela Entradas e #entradas e o Estoque.
+                -->
+                <li class="menu-grupo" data-grupo="estoque">
+                    <button type="button" class="menu-grupo-botao" aria-expanded="false" aria-controls="grupoEstoque" title="Compras e estoque">
+                        <svg class="menu-icone" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="M3.27 6.96L12 12.01l8.73-5.05M12 22.08V12"/></svg>
+                        <span class="rotulo-menu">Compras e estoque</span>
+                        <svg class="menu-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                    </button>
+                    <ul class="submenu" id="grupoEstoque" hidden>
+                        <li><a href="#pedidos" data-secao="pedidos" title="Entradas: a nota do fornecedor (o único jeito de pôr mercadoria no estoque)">
+                            <svg class="menu-icone" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/></svg>
+                            <span class="rotulo-menu">Entradas</span></a></li>
+                        <li><a href="#entradas" data-secao="entradas" title="Estoque: o saldo item por item (celular, peça, produto)">
+                            <svg class="menu-icone" viewBox="0 0 24 24"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg>
+                            <span class="rotulo-menu">Estoque</span></a></li>
+                    </ul>
+                </li>
+                <li class="menu-grupo" data-grupo="vendas">
+                    <button type="button" class="menu-grupo-botao" aria-expanded="false" aria-controls="grupoVendas" title="Vendas e loja online">
+                        <svg class="menu-icone" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
+                        <span class="rotulo-menu">Vendas</span>
+                        <svg class="menu-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                    </button>
+                    <ul class="submenu" id="grupoVendas" hidden>
+                        <li><a href="#vendas" data-secao="vendas" title="Histórico de vendas">
+                            <svg class="menu-icone" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+                            <span class="rotulo-menu">Histórico de vendas</span></a></li>
+                        <li data-so-admin><a href="#loja" data-secao="loja" title="Loja online: encomendas, anúncios e ajustes">
+                            <svg class="menu-icone" viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9M3 9h18M3 9v11h18V9M9 20v-6h6v6"/></svg>
+                            <span class="rotulo-menu">Loja online</span></a></li>
+                    </ul>
+                </li>
+                <li class="menu-grupo" data-grupo="gestao">
+                    <button type="button" class="menu-grupo-botao" aria-expanded="false" aria-controls="grupoGestao" title="Gestão">
+                        <svg class="menu-icone" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></svg>
+                        <span class="rotulo-menu">Gestão</span>
+                        <svg class="menu-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                    </button>
+                    <ul class="submenu" id="grupoGestao" hidden>
+                        <li><a href="#dashboard" data-secao="dashboard" title="Painel de resultados">
+                            <svg class="menu-icone" viewBox="0 0 24 24"><path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 7h8V3h-8z"/></svg>
+                            <span class="rotulo-menu">Painel</span></a></li>
+                        <li data-so-financeiro><a href="#financeiro" data-secao="financeiro" title="Financeiro">
+                            <svg class="menu-icone" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            <span class="rotulo-menu">Financeiro</span></a></li>
+                    </ul>
+                </li>
+                <li class="menu-grupo" data-grupo="administrativo">
+                    <button type="button" class="menu-grupo-botao" aria-expanded="false" aria-controls="grupoAdministrativo" title="Administrativo: cadastros, fiscal, empresa e regras">
+                        <svg class="menu-icone" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2M2 13h20"/></svg>
+                        <span class="rotulo-menu">Administrativo</span>
+                        <svg class="menu-seta" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+                    </button>
+                    <ul class="submenu" id="grupoAdministrativo" hidden>
+                        <li><a href="#cadastros" data-secao="cadastros" title="Cadastros">
+                            <svg class="menu-icone" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <span class="rotulo-menu">Cadastros</span></a></li>
+                        <li data-so-admin><a href="#fiscal" data-secao="fiscal" title="Fiscal">
+                            <svg class="menu-icone" viewBox="0 0 24 24"><path d="M4 2h16v20l-3-2-3 2-2-2-2 2-3-2-3 2z"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
+                            <span class="rotulo-menu">Fiscal</span></a></li>
+                        <li data-so-admin><a href="#admin" data-secao="admin" title="Empresa e regras">
+                            <svg class="menu-icone" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+                            <span class="rotulo-menu">Empresa e regras</span></a></li>
+                        <li><a href="#configuracoes" data-secao="configuracoes" title="Minha conta">
+                    <svg class="menu-icone" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10 3.09V3a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 15 4.6a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                    <span class="rotulo-menu">Minha conta</span></a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="sidebar-rodape">
+            <div class="usuario-cartao">
+                <div class="usuario-inicial" id="usuarioInicial">–</div>
+                <div class="usuario-dados">
+                    <span class="usuario-nome" id="usuarioNome">...</span>
+                    <span class="usuario-perfil" id="usuarioPerfil"></span>
+                </div>
+                <button type="button" class="botao-sair" id="botaoSair" title="Sair do sistema" aria-label="Sair">
+                    <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ====================== CONTEÚDO ====================== -->
+    <div class="coluna">
+
+        <header class="topbar">
+            <button type="button" class="abrir-menu" id="abrirMenu" aria-label="Abrir menu">
+                <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            </button>
+            <div>
+                <div class="topbar-titulo" id="tituloPagina">Painel de Controle</div>
+                <div class="topbar-sub" id="currentDate">&nbsp;</div>
+            </div>
+        </header>
+
+        <!-- Faixa "Banco de teste" (ambiente.js): so aparece quando o banco esta marcado como de teste -->
+        <div data-faixa-teste hidden></div>
+
+        <main>
+
+            <!-- ========================= INICIO ========================= -->
+            <section class="secao" id="secao-inicio">
+                <div id="inicioConteudo"></div>
+            </section>
+
+            <!-- ========================= PDV: a tela de entrada (v8) ========================= -->
+            <section class="secao oculta" id="secao-pdv-inicio">
+                <div id="pdvInicioConteudo"></div>
+            </section>
+
+            <!-- ========================= PDV (tela cheia) ========================= -->
+            <section class="secao oculta" id="secao-pdv">
+                <div id="pdvConteudo"></div>
+            </section>
+
+            <!-- ========================= PEDIDOS DE ENTRADA ========================= -->
+            <section class="secao oculta" id="secao-pedidos">
+                <div id="pedidosConteudo"><p class="texto-vazio">Carregando...</p></div>
+            </section>
+
+            <!-- ========================= LOJA ONLINE ========================= -->
+            <section class="secao oculta" id="secao-loja">
+                <div class="secao-topo">
+                    <div>
+                        <p class="secao-descricao">A vitrine na internet: os anúncios que o cliente vê, as encomendas (pagamento e entrega) e os ajustes.</p>
+                    </div>
+                </div>
+                <div id="lojaConteudo"><p class="texto-vazio">Carregando...</p></div>
+            </section>
+
+            <!-- ========================= FISCAL ========================= -->
+            <section class="secao oculta" id="secao-fiscal">
+                <div class="secao-topo">
+                    <div>
+                        <p class="secao-descricao">Dados fiscais da loja, CFOP e naturezas de operação. O sistema ainda não emite nota: aqui ficam os cadastros que ela vai usar.</p>
+                    </div>
+                </div>
+                <div id="fiscalConteudo"><p class="texto-vazio">Carregando...</p></div>
+            </section>
+
+            <!-- ========================= ADMIN ========================= -->
+            <section class="secao oculta" id="secao-admin">
+                <div class="secao-topo">
+                    <div>
+                        <p class="secao-descricao">Regras da loja (geral e por empresa), dados da empresa e as listas dos cadastros.</p>
+                    </div>
+                </div>
+                <div id="adminConteudo"><p class="texto-vazio">Carregando...</p></div>
+            </section>
+
+            <!-- ========================= DASHBOARD ========================= -->
+            <section class="secao oculta" id="secao-dashboard">
+
+                <!-- Relatórios (receita, custo, lucro): só para quem vê o financeiro -->
+                <div data-so-financeiro>
+                <div class="secao-topo" id="topoKpis">
+                    <div>
+                        <h2 class="secao-titulo" id="tituloPeriodo">Resultado dos últimos 12 meses</h2>
+                        <p class="secao-descricao">Receita das vendas e das OS entregues, menos o custo dos itens e as despesas lançadas no financeiro. Cada relatório tem o seu próprio filtro, no canto do painel.</p>
+                    </div>
+                </div>
+
+                <div class="kpis" id="kpisRelatorio"></div>
+
+                <!-- receita x custo x despesas -->
+                <div class="painel-grafico">
+                    <div class="grafico-topo" id="topoResultado">
+                        <div>
+                            <div class="grafico-titulo">Receita, custo e despesas por mês</div>
+                            <div class="grafico-nota">Passe o mouse em um mês para ver os valores.</div>
+                        </div>
+                    </div>
+                    <div id="graficoResultado"></div>
+                </div>
+
+                <div class="tables-grid">
+                    <div class="painel-grafico">
+                        <div class="grafico-topo" id="topoLucro">
+                            <div>
+                                <div class="grafico-titulo">Lucro líquido por mês</div>
+                                <div class="grafico-nota">Depois de descontar custo e despesas.</div>
+                            </div>
+                        </div>
+                        <div id="graficoLucro"></div>
+                    </div>
+
+                    <div class="painel-grafico">
+                        <div class="grafico-topo" id="topoMargem">
+                            <div>
+                                <div class="grafico-titulo">Margem líquida</div>
+                                <div class="grafico-nota">Quanto sobra de cada R$ 100 vendidos.</div>
+                            </div>
+                        </div>
+                        <div id="graficoMargem"></div>
+                    </div>
+                </div>
+
+                <div class="tables-grid">
+                    <div class="painel-grafico">
+                        <div class="grafico-topo" id="topoCaixa">
+                            <div>
+                                <div class="grafico-titulo">Caixa: entrou e saiu</div>
+                                <div class="grafico-nota">Só o que foi baixado como pago no financeiro.</div>
+                            </div>
+                        </div>
+                        <div id="graficoCaixa"></div>
+                    </div>
+
+                    <div class="painel-grafico">
+                        <div class="grafico-topo" id="topoComposicao">
+                            <div>
+                                <div class="grafico-titulo">De onde vem a receita</div>
+                                <div class="grafico-nota">Balcão x oficina, no período.</div>
+                            </div>
+                        </div>
+                        <div id="graficoComposicao"></div>
+                    </div>
+                </div>
+
+                <div class="tables-grid">
+                    <div class="painel-grafico">
+                        <div class="grafico-topo" id="topoPagamentos">
+                            <div>
+                                <div class="grafico-titulo">Como o cliente pagou</div>
+                                <div class="grafico-nota">Receita das vendas por forma de pagamento.</div>
+                            </div>
+                        </div>
+                        <div id="graficoPagamentos"></div>
+                    </div>
+
+                    <div class="painel-grafico">
+                        <div class="grafico-topo" id="topoDespesas">
+                            <div>
+                                <div class="grafico-titulo">Contas a pagar por categoria</div>
+                                <div class="grafico-nota">Todas as contas a pagar, inclusive compra de estoque. A linha "Despesas" do resultado conta só as lançadas na mão: compra vira custo quando o item sai.</div>
+                            </div>
+                        </div>
+                        <div id="graficoDespesas"></div>
+                    </div>
+                </div>
+
+                <div class="tables-grid">
+                    <div class="painel-grafico">
+                        <div class="grafico-topo" id="topoEstoquePizza">
+                            <div>
+                                <div class="grafico-titulo">Dinheiro parado por tipo</div>
+                                <div class="grafico-nota">Quanto do estoque é celular, peça e produto.</div>
+                            </div>
+                        </div>
+                        <div id="graficoEstoquePizza"></div>
+                    </div>
+
+                    <div class="table-section">
+                        <h3 class="table-title" id="topoRanking"><span style="background:var(--serie-1)"></span>O que mais dá dinheiro</h3>
+                        <div id="rankingItens"></div>
+                    </div>
+
+                    <div class="table-section">
+                        <h3 class="table-title" id="topoVencendo"><span style="background:var(--atencao)"></span>Contas a vencer</h3>
+                        <div id="listaVencendo"></div>
+                    </div>
+                </div>
+
+                <div class="table-section">
+                    <h3 class="table-title" id="topoDre"><span style="background:var(--serie-3)"></span>Resultado do período</h3>
+                    <div id="tabelaDre"></div>
+                </div>
+                </div>
+
+                <!-- operação do dia a dia -->
+                <div class="secao-topo">
+                    <div>
+                        <h2 class="secao-titulo">Estoque e oficina hoje</h2>
+                        <p class="secao-descricao">A situação de agora, não do período. Os quatro cards e as tabelas do fim contam só os celulares, pelo preço de venda; peças e produtos aparecem em "Precisa repor".</p>
+                    </div>
+                </div>
+
+                <div class="stats-container">
+                    <div class="stat-box">
+                        <div class="stat-title stock-ready-color"><span></span>Stock Ready</div>
+                        <div class="stat-value" id="cardReady">R$ 0,00</div>
+                        <div class="stat-sub" id="cardReadyQtd">0 itens</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title stock-proc-color"><span></span>Stock em Processamento</div>
+                        <div class="stat-value" id="cardProc">R$ 0,00</div>
+                        <div class="stat-sub" id="cardProcQtd">0 itens</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title stock-check-color"><span></span>Stock Check</div>
+                        <div class="stat-value" id="cardCheck">R$ 0,00</div>
+                        <div class="stat-sub" id="cardCheckQtd">0 itens</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-title stock-color"><span></span>Stock Total</div>
+                        <div class="stat-value" id="cardTotal">R$ 0,00</div>
+                        <div class="stat-sub" id="cardTotalQtd">0 itens</div>
+                    </div>
+                </div>
+
+                <div class="highlight-section">
+                    <h3 class="highlight-title"><span></span>Próximo celular em processamento</h3>
+                    <div id="proximoProcessamento">
+                        <p class="texto-vazio">Carregando...</p>
+                    </div>
+                </div>
+
+                <div class="stats-container" id="cardsOs"></div>
+
+                <div class="tables-grid" id="tabelasEstoque"></div>
+            </section>
+
+            <!-- ========================= ENTRADAS ========================== -->
+            <section class="secao oculta" id="secao-entradas">
+                <div class="secao-topo">
+                    <div>
+                        <p class="secao-descricao">O estoque item por item. O saldo é calculado: entrou menos vendido menos usado em OS. Mercadoria nova entra pela tela Entradas (a nota do fornecedor, ou a compra digitada).</p>
+                    </div>
+                    <div class="grupo-botoes">
+                        <button type="button" class="botao" data-acao="estoque-nova-entrada" title="Abre a tela Entradas: nota do fornecedor ou compra digitada">+ Nova entrada</button>
+                    </div>
+                </div>
+
+                <div class="barra-filtros">
+                    <input type="search" id="buscaEntrada" placeholder="Buscar por item, IMEI, fornecedor ou observação...">
+                    <select id="filtroTipo">
+                        <option value="">Todos os tipos</option>
+                        <option value="celular">Celulares</option>
+                        <option value="peca">Peças</option>
+                        <option value="produto">Produtos</option>
+                    </select>
+                    <select id="filtroSituacao">
+                        <option value="">Todas as situações</option>
+                        <option value="em_estoque">Em estoque (peça/produto)</option>
+                        <option value="esgotado">Esgotado (peça/produto)</option>
+                        <option value="ready">Stock Ready (celular)</option>
+                        <option value="processamento">Em processamento (celular)</option>
+                        <option value="check">Stock Check (celular)</option>
+                        <option value="vendido">Vendido (celular)</option>
+                        <option value="zerado">Sem saldo (qualquer tipo)</option>
+                    </select>
+                    <input type="date" id="entradaDe" class="filtro-data-larga" title="Entradas a partir de">
+                    <span class="filtro-ate">até</span>
+                    <input type="date" id="entradaAte" class="filtro-data-larga" title="Entradas até">
+                    <button type="button" class="botao botao-secundario botao-pequeno oculta" id="limparEntradas">Limpar</button>
+                </div>
+
+                <div class="table-section">
+                    <div id="listaEntradas"><p class="texto-vazio">Carregando...</p></div>
+                </div>
+            </section>
+
+            <!-- ==================== ORDENS DE SERVIÇO ====================== -->
+            <section class="secao oculta" id="secao-os">
+                <div class="secao-topo">
+                    <div>
+                        <p class="secao-descricao">Cliente e peças vêm dos cadastros. As peças dão baixa no estoque sozinhas.</p>
+                    </div>
+                    <button type="button" class="botao" data-acao="nova-os">+ Nova ordem de serviço</button>
+                </div>
+
+                <div class="barra-filtros">
+                    <input type="search" id="buscaOs" placeholder="Buscar por número, cliente, aparelho ou defeito...">
+                    <select id="filtroStatus">
+                        <option value="">Todos os status</option>
+                        <option value="abertas">Somente em andamento</option>
+                        <option value="aberta">Aberta</option>
+                        <option value="orcamento">Orçamento</option>
+                        <option value="aprovada">Aprovada</option>
+                        <option value="em_reparo">Em reparo</option>
+                        <option value="pronta">Pronta</option>
+                        <option value="entregue">Entregue</option>
+                        <option value="recusada">Recusada</option>
+                        <option value="cancelada">Cancelada</option>
+                    </select>
+                </div>
+
+                <div class="table-section">
+                    <div id="listaOs"><p class="texto-vazio">Carregando...</p></div>
+                </div>
+            </section>
+
+            <!-- ========================== VENDAS =========================== -->
+            <section class="secao oculta" id="secao-vendas">
+                <div class="secao-topo">
+                    <div>
+                        <p class="secao-descricao">Consulte, edite e cancele as vendas. Venda nova é no PDV: ele baixa o estoque e abre a conta a receber.</p>
+                    </div>
+                    <button type="button" class="botao" data-acao="abrir-pdv">Abrir o PDV <kbd>F2</kbd></button>
+                </div>
+
+                <div class="barra-filtros">
+                    <input type="search" id="buscaVenda" placeholder="Buscar por número, cliente ou vendedor...">
+                    <select id="filtroVenda">
+                        <option value="concluida">Somente concluídas</option>
+                        <option value="">Todas</option>
+                        <option value="cancelada">Canceladas</option>
+                    </select>
+                </div>
+
+                <div class="table-section">
+                    <div id="listaVendas"><p class="texto-vazio">Carregando...</p></div>
+                </div>
+            </section>
+
+            <!-- ========================= CADASTROS ========================= -->
+            <section class="secao oculta" id="secao-cadastros">
+                <div class="secao-topo">
+                    <div>
+                        <p class="secao-descricao">O que existe no mundo: gente, modelos, peças e produtos. Sem quantidade.</p>
+                    </div>
+                    <div class="grupo-botoes">
+                        <button type="button" class="botao botao-secundario" data-acao="nova-movimentacao"
+                                title="Devolução, garantia, defeito, perda ou ajuste de inventário">Movimentar estoque</button>
+                        <button type="button" class="botao" id="botaoNovoCadastro" data-acao="novo-cadastro">+ Novo</button>
+                    </div>
+                </div>
+
+                <div class="sub-abas" id="subAbasCadastros">
+                    <button type="button" class="sub-aba ativa" data-cadastro="clientes">Clientes</button>
+                    <button type="button" class="sub-aba" data-cadastro="modelos">Modelos de celular</button>
+                    <button type="button" class="sub-aba" data-cadastro="pecas">Peças</button>
+                    <button type="button" class="sub-aba" data-cadastro="produtos">Produtos</button>
+                    <button type="button" class="sub-aba" data-cadastro="servicos">Serviços</button>
+                    <button type="button" class="sub-aba" data-cadastro="fornecedores">Fornecedores</button>
+                    <button type="button" class="sub-aba" data-cadastro="formas">Formas de pagamento</button>
+                </div>
+
+                <div class="barra-filtros">
+                    <input type="search" id="buscaCadastro" placeholder="Buscar...">
+                </div>
+
+                <div class="table-section">
+                    <div id="listaCadastro"><p class="texto-vazio">Carregando...</p></div>
+                </div>
+            </section>
+
+            <!-- ========================= FINANCEIRO ======================== -->
+            <section class="secao oculta" id="secao-financeiro">
+                <div class="secao-topo">
+                    <div>
+                        <p class="secao-descricao">Contas a pagar e a receber, geradas pelas vendas e pelas OS ou lançadas na mão.</p>
+                    </div>
+                    <div class="grupo-botoes">
+                        <button type="button" class="botao" data-acao="novo-lancamento" data-tipo="receber">+ A receber</button>
+                        <button type="button" class="botao botao-secundario" data-acao="novo-lancamento" data-tipo="pagar">+ A pagar</button>
+                    </div>
+                </div>
+
+                <div class="sub-abas" id="subAbasFinanceiro">
+                    <button type="button" class="sub-aba ativa" data-painel="resumo">Resumo</button>
+                    <button type="button" class="sub-aba" data-painel="lancamentos">Lançamentos</button>
+                    <button type="button" class="sub-aba" data-painel="vendas">Histórico de vendas</button>
+                </div>
+
+                <div class="barra-filtros oculta" id="filtrosLancamento">
+                    <select id="filtroLancTipo">
+                        <option value="">Receber e pagar</option>
+                        <option value="receber">Só a receber</option>
+                        <option value="pagar">Só a pagar</option>
+                    </select>
+                    <select id="filtroLancStatus">
+                        <option value="pendente">Em aberto</option>
+                        <option value="">Todos os status</option>
+                        <option value="pago">Pagos</option>
+                        <option value="cancelado">Cancelados</option>
+                    </select>
+                </div>
+
+                <div id="conteudoFinanceiro"><p class="texto-vazio">Carregando...</p></div>
+            </section>
+
+            <!-- ======================= CONFIGURAÇÕES ======================= -->
+            <section class="secao oculta" id="secao-configuracoes">
+                <div class="secao-topo">
+                    <div>
+                        <p class="secao-descricao">Sua conta e, para administradores, os usuários do sistema.</p>
+                    </div>
+                </div>
+
+                <div class="tables-grid">
+                    <div class="table-section">
+                        <h3 class="table-title"><span style="background:var(--serie-1)"></span>Minha conta</h3>
+                        <div id="dadosConta" class="lista-dados"></div>
+
+                        <h4 class="sub-titulo">Trocar minha senha</h4>
+                        <form id="formSenha" class="formulario">
+                            <div class="campo">
+                                <label for="senhaAtual">Senha atual</label>
+                                <input type="password" id="senhaAtual" required autocomplete="current-password">
+                            </div>
+                            <div class="campo">
+                                <label for="senhaNova">Nova senha</label>
+                                <input type="password" id="senhaNova" required minlength="8" autocomplete="new-password">
+                                <small class="dica" id="regraSenhaConta"></small>
+                            </div>
+                            <div class="campo">
+                                <label for="senhaConfirma">Repita a nova senha</label>
+                                <input type="password" id="senhaConfirma" required minlength="8" autocomplete="new-password">
+                            </div>
+                            <div class="modal-erro-texto" id="senhaErro" role="alert"></div>
+                            <button type="submit" class="botao">Salvar nova senha</button>
+                        </form>
+                    </div>
+
+                    <div class="table-section" id="blocoUsuarios">
+                        <h3 class="table-title">
+                            <span style="background:var(--serie-5)"></span>Usuários do sistema
+                            <button type="button" class="botao botao-pequeno" data-acao="novo-usuario">+ Novo usuário</button>
+                        </h3>
+                        <div id="listaUsuarios"><p class="texto-vazio">Carregando...</p></div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <footer>
+            Index Celulares &bull; Sistema de Gestão de Assistência Técnica
+        </footer>
+    </div>
+</div>
+
+<!-- Janela de cadastro/edição (o conteúdo é montado pelo janela.js) -->
+<div class="modal-fundo oculta" id="modal">
+    <div class="modal-caixa">
+        <div class="modal-topo">
+            <h3 id="modalTitulo">Cadastro</h3>
+            <button type="button" class="modal-fechar" id="modalFechar" aria-label="Fechar">&times;</button>
+        </div>
+        <form id="modalForm">
+            <div class="modal-corpo" id="modalCorpo"></div>
+            <div class="modal-rodape">
+                <button type="button" class="botao botao-secundario" id="modalCancelar">Cancelar</button>
+                <button type="submit" class="botao" id="modalSalvar">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Troca obrigatória de senha: sem ×, não fecha por Esc nem por clique fora -->
+<div class="modal-fundo troca-senha oculta" id="trocaSenha" role="dialog" aria-modal="true" aria-labelledby="trocaSenhaTitulo">
+    <div class="modal-caixa modal-estreita">
+        <div class="modal-topo">
+            <h3 id="trocaSenhaTitulo">Troque sua senha</h3>
+        </div>
+        <form id="formTrocaSenha">
+            <div class="modal-corpo">
+                <p class="campo-total">Sua senha é provisória. Escolha uma senha nova para começar a usar o sistema.</p>
+                <div class="campo campo-total">
+                    <label for="trocaAtual">Senha atual (a que você recebeu)</label>
+                    <input type="password" id="trocaAtual" required autocomplete="current-password">
+                </div>
+                <div class="campo campo-total">
+                    <label for="trocaNova">Nova senha</label>
+                    <input type="password" id="trocaNova" required minlength="8" autocomplete="new-password">
+                    <small class="dica" id="trocaSenhaDica"></small>
+                </div>
+                <div class="campo campo-total">
+                    <label for="trocaConfirma">Repita a nova senha</label>
+                    <input type="password" id="trocaConfirma" required minlength="8" autocomplete="new-password">
+                </div>
+                <div class="modal-erro-texto campo-total" id="trocaSenhaErro" role="alert"></div>
+            </div>
+            <div class="modal-rodape">
+                <button type="button" class="botao botao-secundario" id="trocaSair">Sair</button>
+                <button type="submit" class="botao">Trocar senha</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="avisos" class="avisos"></div>
+<div class="dica-grafico" id="dicaGrafico" role="tooltip" aria-hidden="true"></div>
+
+<!-- Ordem importa: cada arquivo usa os objetos dos que vieram antes (ver nucleo.js). -->
+<script src="ambiente.js"></script>
+<script src="formato.js"></script>
+<script src="dre.js"></script>
+<script src="os-regras.js"></script>
+<script src="pdv-regras.js"></script>
+<script src="graficos.js"></script>
+<script src="nucleo.js"></script>
+<script src="janela.js"></script>
+<script src="editores.js"></script>
+<script src="responsivo.js"></script>
+<script src="telas/painel.js"></script>
+<script src="telas/movimentacao.js"></script>
+<script src="telas/entradas.js"></script>
+<script src="telas/os.js"></script>
+<script src="telas/vendas.js"></script>
+<script src="telas/cadastros.js"></script>
+<script src="telas/financeiro.js"></script>
+<script src="telas/configuracoes.js"></script>
+<script src="telas/modulos.js"></script>
+<script src="telas/pdv.js"></script>
+<script src="telas/admin.js"></script>
+<script src="telas/fiscal.js"></script>
+<script src="telas/pedidos.js"></script>
+<script src="telas/loja.js"></script>
+<script src="telas/pdv-inicio.js"></script>
+<script src="inicio.js"></script>
+</body>
+</html>

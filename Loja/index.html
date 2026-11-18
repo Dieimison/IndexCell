@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <title>Loja online - Index Celulares</title>
+    <link rel="icon" href="../Img/logo.jpeg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="loja.css">
+</head>
+<body>
+
+<header class="topo">
+    <div class="topo-faixa">
+        <a href="#/" class="marca" aria-label="Voltar para a vitrine">
+            <img src="../Img/logo.jpeg" alt="">
+            <span class="marca-textos">
+                <span class="marca-nome" id="nomeLoja">Index Celulares</span>
+                <span class="marca-sub">Loja online</span>
+            </span>
+        </a>
+        <form class="busca" id="formBusca" role="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <input type="search" id="campoBusca" placeholder="Buscar celular, capa, película..." aria-label="Buscar produtos" autocomplete="off">
+        </form>
+        <nav class="topo-acoes" aria-label="Sua conta e carrinho">
+            <a href="#/entrar" class="topo-botao" id="botaoConta">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+                <span id="rotuloConta">Entrar</span>
+            </a>
+            <a href="#/carrinho" class="topo-botao topo-carrinho" aria-label="Carrinho">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20.5" r="1.2"/><circle cx="17" cy="20.5" r="1.2"/></svg>
+                <span class="rotulo-carrinho">Carrinho</span>
+                <span class="contador" id="contadorCarrinho" hidden>0</span>
+            </a>
+        </nav>
+    </div>
+    <!-- Faixa "Banco de teste" (Dashboard/ambiente.js): so aparece quando o banco esta marcado como de teste -->
+    <div data-faixa-teste hidden></div>
+</header>
+
+<main id="conteudo" class="conteudo" tabindex="-1">
+    <p class="carregando">Carregando a vitrine...</p>
+</main>
+
+<footer class="rodape">
+    <p><strong id="nomeRodape">Index Celulares</strong> · assistência técnica e loja de celulares</p>
+    <p class="rodape-fraco">Pagamento por Pix. O rastreio da sua encomenda aparece em <a href="#/encomendas">Minhas encomendas</a>.
+        <span class="rodape-sep">·</span> <a href="../Login/index.html">Área da loja (funcionários)</a></p>
+</footer>
+
+<div id="avisos" class="avisos" aria-live="polite"></div>
+
+<script src="../Dashboard/ambiente.js"></script>
+<script src="../Dashboard/formato.js"></script>
+<script src="loja.js"></script>
+</body>
+</html>

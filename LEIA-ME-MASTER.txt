@@ -1,0 +1,70 @@
+INDEX CELULARES - MASTER (cópia atualizada de 03/11/2026)
+=========================================================
+
+O que é esta pasta
+    O sistema completo na versão mais nova (código da versão 8, banco
+    versão 8), pronto para ver funcionando e para instalar na loja.
+    NÃO tem o banco da loja dentro: a pasta dados\ está sem index.sqlite
+    de propósito. A loja de verdade continua em ..\master-restaurado
+    (versão 5) e não foi mexida.
+
+Para VER funcionando (sem mexer na loja)
+    Dois cliques em  abrir-demonstracao.bat
+    Sobe em http://127.0.0.1:5604 com um banco de mentira (demo\demo.sqlite),
+    com a faixa "BANCO DE TESTE" ligada.
+        Painel (aba Funcionário):  p      / p   (acesso rápido, admin)
+                                   admin  / Loja-Teste-2026x
+                                   balcao / Caixa-Teste-2026x
+        Loja online (aba Cliente ou http://127.0.0.1:5604/loja):
+                                   cliente@demo.com / Compra-Demo-2026
+    O p / p vem do  php dados\homologacao.php  (põe um banco de teste em
+    homologação; veja o LEIA-ME.txt) e só entra porque o banco é de teste
+    (Empresa e regras > Regras > Sistema). Na loja a regra fica desligada,
+    e o p não existe no banco da loja.
+    Entradas > "Importar XML da NF-e": demo\exemplo-nfe-fornecedor.xml
+    (nota de exemplo, fornecedor fictício).
+
+O que mudou desde a versão que está na loja (versão 5)
+    v6   Tela de Início com os módulos; PDV em tela cheia (F2); campos de
+         lista com "+ Nova"; Admin: regras por chave (geral x empresa),
+         dados da empresa com CNPJ (aceita o CNPJ com letras), listas.
+    v7   Pedido de entrada (digitado ou do XML da NF-e do fornecedor);
+         Fiscal (dados fiscais, CFOP, naturezas de operação); a janela
+         "Nova venda" saiu: venda nova é no PDV.
+    v7.1 Celular, tablet e computador: nenhuma tela mais larga que o
+         aparelho; tabela larga vira lista de cartões.
+    v8   LOJA ONLINE: vitrine para o cliente (endereço /loja), conta do
+         cliente, carrinho, encomenda com Pix, e o rastreio da entrega
+         até o endereço. No painel, menu "Loja online": anúncios (com
+         fotos), encomendas (confirmar pagamento = vira venda; avançar a
+         entrega passo a passo; cancelar) e ajustes (frete, prazos, Pix).
+         Tela de login com as abas Funcionário | Cliente.
+         Tela de ENTRADA do PDV (menu PDV): Nova venda, Nova OS, o dia de
+         hoje, atalhos e as últimas OS.
+         Faixa "BANCO DE TESTE" quando ligada em Empresa e regras > Regras (na loja
+         de verdade fica desligada).
+    Ainda NÃO: emissão de nota fiscal; pagamento automático (o Pix é
+    conferido pelo admin); aviso por e-mail; "esqueci a senha" do
+    cliente; a loja online na internet (precisa de hospedagem com HTTPS).
+
+Para INSTALAR na loja (não fazer com o sistema aberto pelos outros)
+    1. Fechar o servidor da loja (a janela preta da porta 5500).
+    2. Copiar o banco da loja para FORA da pasta (backup):
+           master-restaurado\dados\index.sqlite
+    3. Copiar SÓ O CÓDIGO desta pasta para a pasta da loja (nunca a pasta
+       demo\, nunca um index.sqlite, nem dados\backups\, nem testes\saida\,
+       nem este abrir-demonstracao.bat).
+    4. Na pasta da loja:  php dados\aplicar-estrutura.php
+       Ele faz outra cópia de segurança (em dados\backups\ da pasta da
+       loja), leva o banco da versão 5 para a 8
+       e tem de terminar com "Pronto (versão 8)". Rodado de novo, diz
+       "Nada a fazer".
+    5. Rodar os testes:  testes\rodar.bat  (tem de dar TUDO VERDE).
+    6. Subir a loja de novo (iniciar-servidor.bat) e conferir o login.
+    A loja online nasce FECHADA: para abrir, Loja online > Ajustes, com a
+    chave Pix.
+
+Conferido antes desta cópia
+    testes\rodar.bat = TUDO VERDE na cópia de trabalho (API 150 de 150,
+    15 roteiros de tela). Os 108 arquivos de código desta pasta conferem
+    por hash com a cópia de trabalho.

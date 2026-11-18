@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- EXEMPLO DE TESTE: fornecedor ficticio. Nao e nota real. -->
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00"><NFe><infNFe Id="NFe35261111222333000181550010000043211246813574" versao="4.00">
+<ide><cUF>35</cUF><mod>55</mod><serie>1</serie><nNF>4321</nNF><dhEmi>2026-11-02T09:00:00-03:00</dhEmi><tpNF>1</tpNF></ide>
+<emit><CNPJ>11222333000181</CNPJ><xNome>DISTRIBUIDORA EXEMPLO LTDA</xNome><enderEmit><UF>SP</UF><fone>1133334444</fone></enderEmit><IE>123456789</IE></emit>
+<det nItem="1"><prod><cProd>CAPA-A15</cProd><cEAN>SEM GTIN</cEAN><xProd>CAPA SILICONE GALAXY A15</xProd><NCM>39269090</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>10.0000</qCom><vUnCom>8.00</vUnCom><vProd>80.00</vProd></prod></det>
+<det nItem="2"><prod><cProd>PEL-A15</cProd><cEAN>SEM GTIN</cEAN><xProd>PELICULA 3D GALAXY A15</xProd><NCM>39199090</NCM><CFOP>5102</CFOP><uCom>UN</uCom><qCom>20.0000</qCom><vUnCom>3.00</vUnCom><vProd>60.00</vProd><vDesc>5.00</vDesc></prod></det>
+<det nItem="3"><prod><cProd>CEL-A15</cProd><cEAN>SEM GTIN</cEAN><xProd>SMARTPHONE GALAXY A15 128GB PRETO</xProd><NCM>85171300</NCM><CEST>2106400</CEST><CFOP>5102</CFOP><uCom>UN</uCom><qCom>2.0000</qCom><vUnCom>780.00</vUnCom><vProd>1560.00</vProd></prod><infAdProd>IMEI 356938035643809 IMEI 490154203237518</infAdProd></det>
+<total><ICMSTot><vProd>1700.00</vProd><vDesc>5.00</vDesc><vFrete>25.00</vFrete><vNF>1720.00</vNF></ICMSTot></total>
+<cobr><dup><nDup>001</nDup><dVenc>2026-12-02</dVenc><vDup>860.00</vDup></dup><dup><nDup>002</nDup><dVenc>2027-01-02</dVenc><vDup>860.00</vDup></dup></cobr>
+</infNFe></NFe></nfeProc>

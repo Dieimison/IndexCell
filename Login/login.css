@@ -1,0 +1,531 @@
+/* Cores do login: todas aqui, como tokens (o resto do arquivo so usa var(--...)). */
+:root {
+    --fundo:          #181c29;
+    --azul:           #20a0ff;
+    --azul-escuro:    #1e90ff;
+    --tinta:          #ffffff;
+    --tinta-media:    #e0e0e0;
+    --tinta-escura:   #222222;
+    --erro:           #ff4d4d;
+    --sucesso:        #27ae60;
+    --sucesso-claro:  #2ecc71;
+    --sombra:         #000000;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: var(--fundo);
+    position: relative;
+    overflow-x: hidden;   /* de pe, a tela do celular baixo ainda rola (v8: abas + links do cliente) */
+    perspective: 1000px;
+    padding: 20px 0;
+}
+
+/* Elementos 3D flutuantes no fundo */
+.bg-elements {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    transform-style: preserve-3d;
+}
+
+.tech-item {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: color-mix(in srgb, var(--azul) 5%, transparent);
+    border: 1px solid color-mix(in srgb, var(--azul) 10%, transparent);
+    border-radius: 10px;
+    box-shadow: 0 0 20px color-mix(in srgb, var(--azul) 5%, transparent);
+    animation: float 15s infinite ease-in-out;
+    transform: translateZ(-100px);
+}
+
+.tech-item:nth-child(1) {
+    top: 10%;
+    left: 10%;
+    width: 80px;
+    height: 80px;
+    animation-delay: 0s;
+}
+
+.tech-item:nth-child(2) {
+    top: 20%;
+    right: 15%;
+    width: 100px;
+    height: 100px;
+    animation-delay: -3s;
+}
+
+.tech-item:nth-child(3) {
+    bottom: 15%;
+    left: 15%;
+    width: 70px;
+    height: 70px;
+    animation-delay: -6s;
+}
+
+.tech-item:nth-child(4) {
+    bottom: 25%;
+    right: 10%;
+    animation-delay: -9s;
+}
+
+.tech-item:nth-child(5) {
+    top: 50%;
+    left: 5%;
+    width: 50px;
+    height: 50px;
+    animation-delay: -12s;
+}
+
+.phone-icon, .chip-icon, .tool-icon, .screen-icon, .gear-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    height: 60%;
+    opacity: 0.7;
+}
+
+/* Ícones estilizados usando pseudo-elementos */
+.phone-icon::before, .phone-icon::after {
+    content: "";
+    position: absolute;
+    background: color-mix(in srgb, var(--azul) 80%, transparent);
+}
+
+.phone-icon::before {
+    width: 60%;
+    height: 100%;
+    top: 0;
+    left: 20%;
+    border-radius: 5px;
+}
+
+.phone-icon::after {
+    width: 40%;
+    height: 10%;
+    bottom: -15%;
+    left: 30%;
+    border-radius: 3px;
+}
+
+.chip-icon::before, .chip-icon::after {
+    content: "";
+    position: absolute;
+    background: color-mix(in srgb, var(--azul) 80%, transparent);
+}
+
+.chip-icon::before {
+    width: 80%;
+    height: 80%;
+    top: 10%;
+    left: 10%;
+    border-radius: 3px;
+}
+
+.tool-icon::before, .tool-icon::after {
+    content: "";
+    position: absolute;
+    background: color-mix(in srgb, var(--azul) 80%, transparent);
+}
+
+.tool-icon::before {
+    width: 20%;
+    height: 100%;
+    top: 0;
+    left: 40%;
+    border-radius: 3px;
+}
+
+.tool-icon::after {
+    width: 100%;
+    height: 20%;
+    top: 40%;
+    left: 0;
+    border-radius: 3px;
+}
+
+.screen-icon::before {
+    content: "";
+    position: absolute;
+    width: 90%;
+    height: 70%;
+    top: 15%;
+    left: 5%;
+    border: 2px solid color-mix(in srgb, var(--azul) 80%, transparent);
+    border-radius: 5px;
+}
+
+.gear-icon {
+    width: 70%;
+    height: 70%;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top: 3px solid color-mix(in srgb, var(--azul) 80%, transparent);
+    border-bottom: 3px solid color-mix(in srgb, var(--azul) 80%, transparent);
+    animation: spin 10s linear infinite;
+}
+
+.gear-icon::before {
+    content: "";
+    position: absolute;
+    width: 30%;
+    height: 30%;
+    top: 35%;
+    left: 35%;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--azul) 80%, transparent);
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg) translateZ(-100px);
+    }
+    25% {
+        transform: translateY(-20px) rotate(5deg) translateZ(-50px);
+    }
+    50% {
+        transform: translateY(10px) rotate(-5deg) translateZ(-150px);
+    }
+    75% {
+        transform: translateY(-15px) rotate(10deg) translateZ(-75px);
+    }
+}
+
+@keyframes spin {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Container principal com efeito de vidro */
+.login-container {
+    background: color-mix(in srgb, var(--tinta) 5%, transparent);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    box-shadow: 0 25px 45px color-mix(in srgb, var(--sombra) 20%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tinta) 10%, transparent);
+    width: 400px;
+    padding: 40px;
+    text-align: center;
+    position: relative;
+    z-index: 10;
+    overflow: hidden;
+}
+
+/* Efeito de brilho na borda */
+.login-container::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(to right, transparent, color-mix(in srgb, var(--azul) 10%, transparent), transparent);
+    transform: rotate(30deg);
+    animation: borderLight 6s linear infinite;
+    z-index: -1;
+}
+
+@keyframes borderLight {
+    0% {
+        transform: rotate(30deg) translateX(-100%);
+    }
+    100% {
+        transform: rotate(30deg) translateX(100%);
+    }
+}
+
+.logo {
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.logo img {
+    width: 160px;
+    height: auto;
+    border-radius: 500px;
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--azul) 30%, transparent));
+}
+
+h1 {
+    color: var(--tinta);
+    margin-bottom: 30px;
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.input-group {
+    margin-bottom: 25px;
+    text-align: left;
+    position: relative;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--tinta-media);
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+}
+
+input {
+    width: 100%;
+    padding: 15px 20px;
+    background: color-mix(in srgb, var(--tinta) 7%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tinta) 10%, transparent);
+    border-radius: 8px;
+    color: var(--tinta);
+    font-size: 15px;
+    transition: all 0.3s;
+}
+
+input::placeholder {
+    color: color-mix(in srgb, var(--tinta) 50%, transparent);
+}
+
+input:focus {
+    outline: none;
+    border-color: color-mix(in srgb, var(--azul) 50%, transparent);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--azul) 20%, transparent);
+}
+
+.input-icon {
+    position: absolute;
+    right: 15px;
+    top: 43px;
+    color: color-mix(in srgb, var(--azul) 70%, transparent);
+    font-size: 20px;
+}
+
+button {
+    background: linear-gradient(90deg, var(--azul-escuro), var(--azul));
+    color: white;
+    border: none;
+    padding: 16px;
+    width: 100%;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+}
+
+button::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--tinta) 20%, transparent), transparent);
+    transition: all 0.6s;
+}
+
+button:hover::before {
+    left: 100%;
+}
+
+button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 7px 20px color-mix(in srgb, var(--azul) 30%, transparent);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+.error-message {
+    color: var(--erro);
+    margin-top: 20px;
+    padding: 12px;
+    background: color-mix(in srgb, var(--erro) 10%, transparent);
+    border-left: 3px solid var(--erro);
+    border-radius: 4px;
+    font-size: 14px;
+    text-align: left;
+    display: none;
+}
+
+.footer {
+    margin-top: 35px;
+    color: color-mix(in srgb, var(--tinta) 60%, transparent);
+    font-size: 13px;
+}
+
+/* Responsividade */
+@media (max-width: 480px) {
+    .login-container {
+        width: 90%;
+        padding: 30px 20px;
+    }
+    
+    h1 {
+        font-size: 22px;
+    }
+}
+/* Animacoes do login: tremida do erro, spinner e janela de boas-vindas. */
+.shake {
+    animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+.spinner {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border: 2px solid color-mix(in srgb, var(--tinta) 30%, transparent);
+    border-radius: 50%;
+    border-top-color: var(--tinta);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.success-button {
+    background: linear-gradient(to right, var(--sucesso), var(--sucesso-claro)) !important;
+}
+
+.success-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: color-mix(in srgb, var(--sombra) 85%, transparent);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.success-overlay.visible {
+    opacity: 1;
+}
+
+.success-modal {
+    background-color: white;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    max-width: 400px;
+    color: var(--tinta-escura);
+    transform: translateY(20px);
+    transition: transform 0.5s ease;
+}
+
+.success-overlay.visible .success-modal {
+    transform: translateY(0);
+}
+
+.success-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    background: linear-gradient(to right, var(--sucesso), var(--sucesso-claro));
+    color: white;
+    font-size: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 20px;
+}
+
+/* Quem esta entrando (v8): Funcionario vai para o painel, Cliente para a loja online.
+   As abas nao herdam o botao grande do formulario. */
+.abas-login {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 4px;
+    margin: -10px 0 24px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--tinta) 7%, transparent);
+    border: 1px solid color-mix(in srgb, var(--tinta) 10%, transparent);
+}
+
+.abas-login .aba-login {
+    background: transparent;
+    color: var(--tinta-media);
+    padding: 10px 8px;
+    min-height: 44px;
+    border-radius: 999px;
+    font-size: 14px;
+    letter-spacing: .5px;
+    text-transform: none;
+}
+
+.abas-login .aba-login::before { display: none; }
+
+.abas-login .aba-login:hover {
+    transform: none;
+    box-shadow: none;
+    color: var(--tinta);
+}
+
+.abas-login .aba-login.ativa {
+    background: linear-gradient(90deg, var(--azul-escuro), var(--azul));
+    color: var(--tinta);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--azul) 30%, transparent);
+}
+
+.abas-login .aba-login:focus-visible {
+    outline: 2px solid var(--azul);
+    outline-offset: 2px;
+}
+
+.cliente-links {
+    margin-top: 22px;
+    color: var(--tinta-media);
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.cliente-links[hidden] { display: none; }
+
+.cliente-links a {
+    color: var(--azul);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.cliente-links a:hover { text-decoration: underline; }
+
+/* Faixa "Banco de teste" (v8): presa no topo, sem empurrar a caixa do login. */
+.faixa-teste-login { position: fixed; top: 0; left: 0; right: 0; z-index: 30; }

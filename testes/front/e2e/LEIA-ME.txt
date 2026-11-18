@@ -1,0 +1,57 @@
+ROTEIROS DE TELA (Playwright) - testes\front\e2e
+=================================================
+
+O que sao
+    Roteiros que abrem o painel num navegador de verdade (Chromium sem
+    janela) e fazem o que o atendente faz: abrir OS, salvar, voltar, trocar
+    senha... Conferem a tela e o banco. Nao rodam no lugar dos testes de
+    regra (testes\front\*.test.js): pegam o que so aparece com a tela montada.
+
+Como rodar (na pasta do projeto)
+    node testes\front\e2e\rodar.js            todos, em ordem
+    node testes\front\e2e\rodar.js a1-os      so um (troca-senha e massa
+                                              rodam antes, sempre)
+
+    O rodar.js cria um banco TEMPORARIO pelo dados\aplicar-estrutura.php,
+    sobe "php -S" numa porta livre apontando para ele, roda e apaga tudo.
+    O dados\index.sqlite da loja nao e tocado. O testes\rodar.bat chama
+    este rodar.js como uma etapa.
+
+Codigo de saida
+    0   tudo certo
+    1   algum roteiro falhou (ou o servidor de teste nao subiu)
+    77  Playwright/Chromium nao instalado: a etapa aparece como PULADO no
+        testes\rodar.bat, e o resultado geral NAO e "TUDO VERDE".
+
+Precisa de
+    PHP (C:\php\php.exe ou no PATH) e Node.js, e o Playwright com o Chromium:
+        npm install playwright
+        npx playwright install chromium
+
+Variaveis de ambiente (todas opcionais)
+    E2E_PLAYWRIGHT   onde esta o pacote playwright
+                     (padrao: C:\Projetos\Monolito\node_modules\playwright)
+    E2E_PHP          o php.exe (padrao: C:\php\php.exe, senao "php")
+    E2E_PRINTS       pasta dos prints e dos .log de cada roteiro
+                     (padrao: testes\front\e2e\prints)
+    E2E_URL          usar um servidor JA no ar em vez de subir um. Junto,
+                     INDEX_CELULARES_DB tem de apontar para o banco DESSE
+                     servidor (de teste! os roteiros gravam), e
+                     E2E_SENHA_INICIAL e a senha do admin desse banco.
+
+Os roteiros (ordem do rodar.js)
+    troca-senha     o admin novo troca a senha no 1o acesso, sem fuga
+    massa           cria clientes, modelo, estoque e uma venda paga
+    fumaca          todas as secoes e janelas abrem; numeros vem do servidor;
+                    sem /api/config aparece "Tentar de novo"
+    a1-os           reabrir a OS e salvar nao muda valores (A1 da banca), e
+                    mexer no orcamento depois de reabrir mantem o final gravado
+    sessao          409 com Recarregar/Copiar; sessao caida com login na
+                    janela; Voltar; F5 (beforeunload)
+    janela-usuario  sessao trocada para outro usuario: nada e gravado
+    xss             nome com aspas nao vira atributo nem executa
+    formas          forma padrao; pagamento unico acompanha o valor final;
+                    forma sem valor trava; valor sem forma: decide o servidor
+    balcao          perfil balcao: sem financeiro, custo, cancelar, Excluir
+                    nem forma padrao; brinde; venda de R$ 0 recusada
+    bloqueio        "Restam N tentativa(s)", bloqueio e Destravar

@@ -1,0 +1,4206 @@
+/* ==================================================================
+   INDEX CELULARES - Painel
+   ------------------------------------------------------------------
+   Organizacao:
+     1. Tokens             cores, espacos, raios, sombras
+     2. Base               reset, tipografia, rolagem
+     3. Estrutura          sidebar + topbar + conteudo
+     4. Componentes        cards, tabelas, etiquetas, botoes
+     5. Graficos           SVG dos relatorios
+     6. Formularios        campos, modal, editor de itens
+     7. Movimento          transicoes e entrada das secoes
+     8. Telas estreitas
+
+   Tudo aqui e escrito contra os TOKENS do bloco 1. Trocar a cor de
+   acento do sistema inteiro e mudar uma linha la em cima, e nao
+   procurar hexadecimal solto por 900 linhas.
+   ================================================================== */
+
+/* ==================================================================
+   1. Tokens
+   ================================================================== */
+:root {
+    /* --- superficies (do mais fundo para o mais proximo) --- */
+    --fundo:            #0d1017;
+    --superficie:       #171b26;   /* cards e paineis */
+    --superficie-alta:  #1e2330;   /* hover, campos, cabecalho de tabela */
+    --superficie-topo:  #232838;   /* modal */
+
+    /* --- tinta --- */
+    --tinta:            #f2f4f8;
+    --tinta-media:      #a8b2c6;
+    --tinta-fraca:      #6f7a90;
+
+    /* --- linhas --- */
+    --borda:            rgba(255, 255, 255, 0.08);
+    --borda-forte:      rgba(255, 255, 255, 0.14);
+    --grade:            rgba(255, 255, 255, 0.06);
+
+    /* --- acento --- */
+    --acento:           #3987e5;
+    --acento-claro:     #6ba7ee;
+    --acento-fundo:     rgba(57, 135, 229, 0.12);
+    --acento-borda:     rgba(57, 135, 229, 0.35);
+
+    /* --- series dos graficos ---
+       Paleta categorica validada contra a superficie #171b26 com o
+       validador da metodologia (banda de luminosidade, piso de croma,
+       separacao para daltonismo e contraste). Nao trocar no olho:
+       revalidar antes. A ordem tambem faz parte da validacao. */
+    --serie-1:          #3987e5;   /* receita   */
+    --serie-2:          #d95926;   /* custo     */
+    --serie-3:          #199e70;   /* lucro     */
+    --serie-4:          #c98500;   /* despesas  */
+    --serie-5:          #d55181;
+
+    /* --- estado (nunca usados como serie) --- */
+    --bom:              #0ca30c;
+    --atencao:          #fab219;
+    --grave:            #ec835a;
+    --critico:          #d03b3b;
+
+    /* --- espaco e forma --- */
+    --gap:              20px;
+    --raio:             14px;
+    --raio-p:           10px;
+    --raio-pill:        999px;
+    --sidebar:          252px;
+
+    /* --- profundidade --- */
+    --sombra:           0 1px 2px rgba(0,0,0,.28), 0 8px 24px rgba(0,0,0,.22);
+    --sombra-alta:      0 2px 4px rgba(0,0,0,.3),  0 18px 44px rgba(0,0,0,.36);
+
+    /* --- movimento --- */
+    --rapido:           140ms cubic-bezier(.4, 0, .2, 1);
+    --suave:            260ms cubic-bezier(.4, 0, .2, 1);
+
+    color-scheme: dark;
+}
+
+/* ==================================================================
+   2. Base
+   ================================================================== */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    min-height: 100vh;
+    background: var(--fundo);
+    color: var(--tinta);
+    font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * Dois brilhos parados atras de tudo. Sao 'fixed' e sem animacao de
+ * propriedade cara: o fundo nao pode custar quadros enquanto a pessoa
+ * rola uma tabela de 200 linhas.
+ */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(1100px 620px at 12% -8%,  rgba(57, 135, 229, .16), transparent 62%),
+        radial-gradient(900px  520px at 92% 108%, rgba(25, 158, 112, .11), transparent 60%);
+}
+
+/* Numero em tabela e card sempre com digito de largura fixa: sem isso
+   as colunas de dinheiro dancam a cada atualizacao. */
+table, .stat-value, .kpi-valor, .editor-total, .grafico {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+}
+
+::selection {
+    background: var(--acento-fundo);
+    color: #fff;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, .12);
+    border: 2px solid var(--fundo);
+    border-radius: var(--raio-pill);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, .2);
+}
+
+:focus-visible {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.oculta {
+    display: none !important;
+}
+
+/* ==================================================================
+   3. Estrutura
+   ================================================================== */
+.app {
+    display: grid;
+    grid-template-columns: var(--sidebar) 1fr;
+    min-height: 100vh;
+    transition: grid-template-columns var(--suave);
+}
+
+/* ------------------------------------------------------------------
+   Menu encolhido
+   ------------------------------------------------------------------
+   Vira uma faixa de ícones. A escolha fica gravada no navegador, então
+   quem gosta de trabalhar com a tela larga não precisa reencolher o
+   menu toda vez que abre o sistema.
+
+   O texto some com width/opacity em vez de display:none porque assim a
+   troca é animada - com display o menu piscaria de um estado para o
+   outro. */
+.app.menu-encolhido {
+    grid-template-columns: 78px 1fr;
+}
+
+.menu-encolhido .marca-nome,
+.menu-encolhido .marca-sub,
+.menu-encolhido .usuario-dados,
+.menu-encolhido .menu a span.rotulo-menu {
+    width: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.menu-encolhido .sidebar {
+    padding: 18px 11px;
+    align-items: stretch;
+}
+
+/* Logo centrado e sozinho no topo, com o botão de expandir logo abaixo -
+   lado a lado eles não caberiam em 78px sem se espremer. */
+.menu-encolhido .marca {
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    padding: 0 0 14px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--borda);
+}
+
+.menu-encolhido .marca img {
+    width: 40px;
+    height: 40px;
+}
+
+.menu-encolhido .menu {
+    gap: 6px;
+}
+
+/* Ícone dentro de um quadrado com toque: vira alvo de clique de verdade
+   e ganha o mesmo formato de card do resto do sistema. */
+.menu-encolhido .menu a {
+    justify-content: center;
+    padding: 0;
+    height: 44px;
+    border-radius: 11px;
+}
+
+.menu-encolhido .menu a.active {
+    background: var(--acento-fundo);
+    box-shadow: inset 0 0 0 1px var(--acento-borda);
+}
+
+/* Encolhido, a barrinha lateral não cabe: o próprio quadrado aceso já
+   marca a seção aberta. */
+.menu-encolhido .menu a.active::before {
+    display: none;
+}
+
+.menu-encolhido .menu-icone {
+    flex-basis: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.menu-encolhido .sidebar-rodape {
+    padding-top: 12px;
+}
+
+.menu-encolhido .usuario-cartao {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+.menu-encolhido .botao-sair {
+    flex-basis: auto;
+    width: 36px;
+    height: 36px;
+}
+
+.menu-encolhido .usuario-inicial {
+    width: 38px;
+    height: 38px;
+    flex-basis: 38px;
+    font-size: 14px;
+}
+
+.menu-encolhido .botao-encolher {
+    margin: 0 auto;
+}
+
+.botao-encolher {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--borda);
+    border-radius: 7px;
+    color: var(--tinta-fraca);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all var(--rapido);
+}
+
+.botao-encolher:hover {
+    background: rgba(255, 255, 255, .07);
+    border-color: var(--borda-forte);
+    color: var(--tinta);
+}
+
+.botao-encolher svg {
+    width: 15px;
+    height: 15px;
+    stroke: currentColor;
+    stroke-width: 1.9;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform var(--suave);
+}
+
+.menu-encolhido .botao-encolher {
+    margin: 0;
+}
+
+.menu-encolhido .botao-encolher svg {
+    transform: rotate(180deg);
+}
+
+/* ---------- sidebar ---------- */
+.sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 22px 14px;
+    background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015));
+    border-right: 1px solid var(--borda);
+    backdrop-filter: blur(12px);
+    z-index: 20;
+}
+
+.marca {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 8px 20px;
+}
+
+.marca img {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    object-fit: cover;
+    border-radius: var(--raio-p);
+    box-shadow: var(--sombra);
+}
+
+/* O botão de encolher divide a linha com o logo e o nome, então o texto
+   não pode quebrar: com quebra, "Index Celulares" virava duas linhas e
+   empurrava o subtítulo para uma terceira. */
+.marca > div {
+    min-width: 0;
+    flex: 1;
+}
+
+.marca-nome,
+.marca-sub {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.marca-nome {
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    line-height: 1.25;
+}
+
+.marca-sub {
+    color: var(--tinta-fraca);
+    font-size: 10px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    list-style: none;
+}
+
+.menu a {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 13px;
+    border-radius: var(--raio-p);
+    color: var(--tinta-media);
+    font-size: 14px;
+    text-decoration: none;
+    transition: background var(--rapido), color var(--rapido);
+}
+
+.menu a:hover {
+    background: rgba(255, 255, 255, .05);
+    color: var(--tinta);
+}
+
+.menu a.active {
+    background: var(--acento-fundo);
+    color: #fff;
+    font-weight: 500;
+}
+
+/* A barrinha da esquerda marca a secao aberta sem depender de cor
+   sozinha - ela some junto com o estado, nao fica piscando. */
+.menu a.active::before {
+    content: '';
+    position: absolute;
+    left: -14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 22px;
+    border-radius: 0 3px 3px 0;
+    background: var(--acento);
+}
+
+.menu-icone {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ---------- grupos do menu (v9) ----------
+   O titulo do grupo e um botao com a mesma cara de um item; a lista abre
+   embaixo, com uma linha guia sob o icone do grupo. Quem abre e fecha e o
+   nucleo.js ("Menu em grupos"). */
+.menu-grupo-botao {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 11px 13px;
+    background: transparent;
+    border: 0;
+    border-radius: var(--raio-p);
+    color: var(--tinta-media);
+    font: inherit;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--rapido), color var(--rapido);
+}
+
+.menu-grupo-botao:hover {
+    background: rgba(255, 255, 255, .05);
+    color: var(--tinta);
+}
+
+.menu-grupo-botao .rotulo-menu {
+    flex: 1;
+    min-width: 0;
+}
+
+.menu-seta {
+    flex: 0 0 14px;
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: .55;
+    transition: transform var(--rapido);
+}
+
+.menu-grupo-botao[aria-expanded="true"] .menu-seta {
+    transform: rotate(90deg);
+}
+
+/* Grupo fechado com a secao aberta dentro: o titulo fica aceso. */
+.menu-grupo.tem-ativo > .menu-grupo-botao[aria-expanded="false"] {
+    background: var(--acento-fundo);
+    color: var(--acento-claro);
+    font-weight: 500;
+}
+
+.submenu {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    list-style: none;
+    margin: 2px 0 6px 21px;
+    padding-left: 8px;
+    border-left: 1px solid var(--borda);
+}
+
+.submenu[hidden] {
+    display: none;
+}
+
+.submenu a {
+    padding-top: 9px;
+    padding-bottom: 9px;
+    font-size: 13.5px;
+}
+
+/* A barrinha da secao aberta continua colada na borda do menu. */
+.submenu a.active::before {
+    left: -44px;
+}
+
+/* Encolhido: o grupo vira um quadrado de icone e a lista aberta, um bloco
+   de icones logo abaixo dele. */
+.menu-encolhido .menu-grupo-botao {
+    justify-content: center;
+    height: 44px;
+    padding: 0;
+    border-radius: 11px;
+}
+
+.menu-encolhido .menu-grupo-botao .rotulo-menu,
+.menu-encolhido .menu-seta {
+    display: none;
+}
+
+.menu-encolhido .menu-grupo-botao .menu-icone {
+    flex-basis: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.menu-encolhido .submenu {
+    gap: 4px;
+    margin: 4px 0 6px;
+    padding: 4px 0;
+    border-left: 0;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .04);
+}
+
+/* botao com cara de link: a origem do item no Estoque abre o documento (Entrada PE-...) */
+.botao-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    color: var(--acento-claro);
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.botao-link:hover {
+    color: var(--tinta);
+}
+
+.sidebar-rodape {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid var(--borda);
+}
+
+.usuario-cartao {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 9px 10px;
+    border-radius: var(--raio-p);
+}
+
+.usuario-inicial {
+    display: grid;
+    place-items: center;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--acento-fundo);
+    border: 1px solid var(--acento-borda);
+    color: var(--acento-claro);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.usuario-dados {
+    min-width: 0;
+    flex: 1;
+}
+
+.usuario-nome {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.usuario-perfil {
+    color: var(--tinta-fraca);
+    font-size: 11px;
+    text-transform: capitalize;
+}
+
+.botao-sair {
+    display: grid;
+    place-items: center;
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    background: transparent;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    color: var(--tinta-media);
+    cursor: pointer;
+    transition: all var(--rapido);
+}
+
+.botao-sair:hover {
+    background: rgba(208, 59, 59, .12);
+    border-color: rgba(208, 59, 59, .4);
+    color: var(--grave);
+}
+
+.botao-sair svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ---------- coluna do conteudo ---------- */
+.coluna {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;      /* deixa a tabela larga rolar em vez de esticar a pagina */
+}
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 16px 28px;
+    background: rgba(13, 16, 23, .78);
+    border-bottom: 1px solid var(--borda);
+    backdrop-filter: blur(16px) saturate(140%);
+}
+
+.topbar-titulo {
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -.02em;
+}
+
+.topbar-sub {
+    color: var(--tinta-fraca);
+    font-size: 12px;
+}
+
+.abrir-menu {
+    display: none;
+    background: transparent;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    color: var(--tinta);
+    cursor: pointer;
+    padding: 7px 9px;
+}
+
+.abrir-menu svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    fill: none;
+    stroke-linecap: round;
+}
+
+main {
+    flex: 1;
+    padding: 26px 28px 40px;
+}
+
+.secao {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+}
+
+.secao-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+/* O bloco de titulo + descricao pode encolher; o filtro ao lado dele,
+   nao. Sem isso, uma descricao longa empurrava o filtro para a linha de
+   baixo, e ele ficava solto no meio da tela. */
+.secao-topo > div:first-child {
+    flex: 1 1 320px;
+    min-width: 0;
+}
+
+.secao-topo > .filtros-painel {
+    flex-shrink: 0;
+}
+
+.secao-titulo {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -.01em;
+}
+
+.secao-descricao {
+    color: var(--tinta-fraca);
+    font-size: 12.5px;
+    margin-top: 2px;
+}
+
+footer {
+    padding: 22px 28px 30px;
+    border-top: 1px solid var(--borda);
+    color: var(--tinta-fraca);
+    font-size: 12px;
+    text-align: center;
+}
+
+/* ==================================================================
+   4. Componentes
+   ================================================================== */
+
+/* ---------- cards de numero ---------- */
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+    gap: 14px;
+}
+
+/* Dentro do modal o espaço é menor: com a largura de fora, o quarto
+   card caía sozinho para a linha de baixo. */
+.modal-corpo .stats-container {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+}
+
+.modal-corpo .stat-box {
+    padding: 13px 14px;
+}
+
+.modal-corpo .stat-value {
+    font-size: 21px;
+}
+
+.stat-box {
+    position: relative;
+    padding: 17px 18px;
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
+    overflow: hidden;
+    transition: transform var(--suave), border-color var(--suave), box-shadow var(--suave);
+}
+
+.stat-box::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--borda-forte), transparent);
+}
+
+.stat-box:hover {
+    transform: translateY(-2px);
+    border-color: var(--borda-forte);
+    box-shadow: var(--sombra-alta);
+}
+
+.stat-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--tinta-media);
+    font-size: 12px;
+    letter-spacing: .02em;
+    margin-bottom: 9px;
+}
+
+.stat-title span {
+    flex: 0 0 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--tinta-fraca);
+}
+
+.stat-value {
+    font-size: 25px;
+    font-weight: 600;
+    letter-spacing: -.025em;
+    line-height: 1.15;
+}
+
+.stat-sub {
+    color: var(--tinta-fraca);
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.stock-ready-color span { background: var(--serie-3); }
+.stock-proc-color  span { background: var(--serie-2); }
+.stock-check-color span { background: var(--serie-1); }
+.stock-color       span { background: var(--serie-5); }
+
+/* ---------- paineis ---------- */
+.table-section {
+    padding: 18px;
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
+}
+
+.tables-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+    gap: 14px;
+    align-items: start;
+}
+
+/* Duas tabelas de peso diferente lado a lado: um resumo curto à
+   esquerda e a lista detalhada à direita. Em partes iguais, a lista
+   ficava tão estreita que o número da venda quebrava em três linhas. */
+.grade-resumo-lista {
+    grid-template-columns: minmax(320px, 1fr) minmax(430px, 2fr);
+}
+
+@media (max-width: 1080px) {
+    .grade-resumo-lista {
+        grid-template-columns: 1fr;
+    }
+}
+
+.table-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;      /* com 3 filtros ao lado, o titulo precisa poder
+                             mandar os filtros para a linha de baixo em vez
+                             de se espremer em duas linhas */
+    gap: 9px;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 14px;
+}
+
+.table-title > span:first-child {
+    flex-shrink: 0;
+}
+
+.table-title span {
+    flex: 0 0 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.table-title .botao-pequeno {
+    margin-left: auto;
+}
+
+.highlight-section {
+    padding: 20px;
+    background:
+        linear-gradient(135deg, rgba(57,135,229,.14), rgba(57,135,229,.03)),
+        var(--superficie);
+    border: 1px solid var(--acento-borda);
+    border-radius: var(--raio);
+}
+
+.highlight-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--acento-claro);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.highlight-title span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--acento);
+}
+
+.destaque-modelo {
+    font-size: 19px;
+    font-weight: 600;
+    letter-spacing: -.02em;
+}
+
+.destaque-info {
+    color: var(--tinta-media);
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+/* ---------- tabelas ---------- */
+.rolagem-x {
+    overflow-x: auto;
+    margin: 0 -18px -18px;
+    padding: 0 18px 18px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+}
+
+th, td {
+    padding: 11px 12px;
+    text-align: left;
+}
+
+th {
+    position: sticky;
+    top: 0;
+    background: var(--superficie);
+    border-bottom: 1px solid var(--borda-forte);
+    color: var(--tinta-fraca);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+td {
+    border-bottom: 1px solid var(--grade);
+    color: var(--tinta);
+}
+
+tbody tr {
+    transition: background var(--rapido);
+}
+
+tbody tr:hover td {
+    background: rgba(255, 255, 255, .028);
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+.linha-total td {
+    background: rgba(255, 255, 255, .04);
+    border-top: 1px solid var(--borda-forte);
+    border-bottom: none;
+    font-weight: 600;
+}
+
+.linha-total:hover td {
+    background: rgba(255, 255, 255, .04);
+}
+
+.empty-row td,
+.texto-vazio {
+    color: var(--tinta-fraca);
+    font-style: italic;
+}
+
+.texto-vazio {
+    padding: 22px 0;
+    text-align: center;
+}
+
+.observacao {
+    color: var(--tinta-fraca);
+    font-size: 11.5px;
+}
+
+.coluna-acoes {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.coluna-acoes .botao-icone + .botao-icone {
+    margin-left: 5px;
+}
+
+.numero {
+    text-align: right;
+}
+
+/* ---------- etiquetas ---------- */
+.etiqueta {
+    /* A cor vem de um token (--cor-etiqueta, posto pelo JS); fundo e borda saem dela. */
+    --cor-etiqueta: var(--tinta-fraca);
+    display: inline-block;
+    padding: 3px 10px;
+    border: 1px solid color-mix(in srgb, var(--cor-etiqueta) 33%, transparent);
+    background: color-mix(in srgb, var(--cor-etiqueta) 13%, transparent);
+    color: var(--cor-etiqueta);
+    border-radius: var(--raio-pill);
+    font-size: 11.5px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.tipo-celular { color: var(--serie-1); }
+.tipo-peca    { color: var(--serie-2); }
+.tipo-produto { color: var(--serie-5); }
+
+.saldo-ok    { color: var(--serie-3); font-weight: 500; }
+.saldo-baixo { color: var(--atencao); font-weight: 500; }
+.saldo-zero  { color: var(--critico); font-weight: 500; }
+
+/* ---------- botoes ---------- */
+.botao {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    background: var(--acento);
+    border: 1px solid transparent;
+    border-radius: var(--raio-p);
+    color: #fff;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--rapido);
+}
+
+.botao:hover {
+    background: var(--acento-claro);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(57, 135, 229, .3);
+}
+
+.botao:active {
+    transform: translateY(0);
+}
+
+.botao:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.botao-secundario {
+    background: transparent;
+    border-color: var(--borda-forte);
+    color: var(--tinta);
+}
+
+.botao-secundario:hover {
+    background: rgba(255, 255, 255, .06);
+    box-shadow: none;
+}
+
+.botao-pequeno {
+    padding: 6px 12px;
+    font-size: 12.5px;
+}
+
+.botao-icone {
+    padding: 5px 11px;
+    background: transparent;
+    border: 1px solid var(--borda);
+    border-radius: 7px;
+    color: var(--tinta-media);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--rapido);
+}
+
+.botao-icone:hover {
+    background: rgba(255, 255, 255, .07);
+    border-color: var(--borda-forte);
+    color: var(--tinta);
+}
+
+.botao-icone.perigo:hover {
+    background: rgba(208, 59, 59, .14);
+    border-color: rgba(208, 59, 59, .45);
+    color: var(--grave);
+}
+
+/* Ação existe mas não cabe neste registro (ex.: excluir uma venda que é o
+   faturamento de uma OS). Fica visível e apagado, com o motivo no title:
+   sumir com o botão faria procurar onde ele foi parar. */
+.botao-icone:disabled {
+    opacity: .38;
+    cursor: not-allowed;
+}
+
+.botao-icone:disabled:hover {
+    background: transparent;
+    border-color: var(--borda);
+    color: var(--tinta-media);
+}
+
+.grupo-botoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+/* ---------- filtros e sub-abas ---------- */
+.barra-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.barra-filtros input,
+.barra-filtros select {
+    padding: 9px 13px;
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+    color: var(--tinta);
+    font-family: inherit;
+    font-size: 13.5px;
+    transition: border-color var(--rapido), background var(--rapido);
+}
+
+.barra-filtros input {
+    flex: 1;
+    min-width: 220px;
+}
+
+.barra-filtros input::placeholder {
+    color: var(--tinta-fraca);
+}
+
+.barra-filtros input:focus,
+.barra-filtros select:focus {
+    outline: none;
+    background: var(--superficie-alta);
+    border-color: var(--acento-borda);
+}
+
+.barra-filtros select option {
+    background: var(--superficie-topo);
+}
+
+.sub-abas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 5px;
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+    width: fit-content;
+    max-width: 100%;
+}
+
+.sub-aba {
+    padding: 8px 15px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--tinta-media);
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--rapido);
+}
+
+.sub-aba:hover {
+    background: rgba(255, 255, 255, .05);
+    color: var(--tinta);
+}
+
+.sub-aba.ativa {
+    background: var(--acento-fundo);
+    color: var(--acento-claro);
+    font-weight: 500;
+    box-shadow: inset 0 0 0 1px var(--acento-borda);
+}
+
+/* ---------- listas de dados ---------- */
+.lista-dados > div {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 15px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--grade);
+}
+
+.lista-dados > div:last-child {
+    border-bottom: none;
+}
+
+.lista-dados span {
+    color: var(--tinta-media);
+    font-size: 13px;
+}
+
+.lista-dados strong {
+    font-size: 13.5px;
+    font-weight: 600;
+    text-align: right;
+}
+
+.sub-titulo {
+    color: var(--tinta-media);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin: 22px 0 11px;
+}
+
+.historico {
+    list-style: none;
+    border-left: 2px solid var(--acento-borda);
+    padding-left: 16px;
+}
+
+.historico li {
+    position: relative;
+    padding: 9px 0;
+    font-size: 13.5px;
+}
+
+.historico li::before {
+    content: '';
+    position: absolute;
+    left: -21px;
+    top: 15px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--acento);
+    box-shadow: 0 0 0 3px var(--superficie);
+}
+
+/* ---------- avisos ---------- */
+.avisos {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    max-width: min(380px, calc(100vw - 44px));
+}
+
+.aviso {
+    padding: 13px 17px;
+    background: var(--superficie-topo);
+    border: 1px solid var(--borda-forte);
+    border-left: 3px solid var(--serie-3);
+    border-radius: var(--raio-p);
+    box-shadow: var(--sombra-alta);
+    font-size: 13.5px;
+    animation: entrar-lado var(--suave);
+}
+
+.aviso-erro {
+    border-left-color: var(--critico);
+}
+
+.aviso.sumindo {
+    opacity: 0;
+    transform: translateX(14px);
+    transition: opacity var(--suave), transform var(--suave);
+}
+
+/* ==================================================================
+   5. Graficos
+   ================================================================== */
+.painel-grafico {
+    padding: 18px;
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
+}
+
+.grafico-topo {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 4px;
+}
+
+.grafico-titulo {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.grafico-nota {
+    color: var(--tinta-fraca);
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+/* ------------------------------------------------------------------
+   Filtro de painel
+   ------------------------------------------------------------------
+   Cada relatorio tem o seu, e eles nao conversam entre si: dá para
+   olhar a receita em 12 meses e o ranking em 3 ao mesmo tempo.
+
+   O controle fica quase invisivel ate o mouse chegar perto - no
+   cabecalho de um painel de grafico, um select com cara de campo de
+   formulario competiria com o numero, que e o que importa ali. */
+.filtros-painel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.filtro-grafico {
+    padding: 5px 26px 5px 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    color: var(--tinta-media);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--rapido);
+
+    /* seta propria: a nativa nao acompanha a cor do tema */
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+                      linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: right 12px center, right 7px center;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+
+    /* nenhum filtro sozinho pode ser mais largo que o painel que o abriga */
+    max-width: 100%;
+}
+
+.filtro-grafico:hover {
+    background-color: var(--superficie-alta);
+    border-color: var(--borda);
+    color: var(--tinta);
+}
+
+.filtro-grafico:focus {
+    outline: none;
+    border-color: var(--acento-borda);
+    color: var(--tinta);
+}
+
+/* Filtro fora do padrao (diferente do valor inicial) fica marcado, para
+   ninguem ler um grafico de 3 meses achando que sao 12. */
+.filtro-grafico.ativo {
+    background-color: var(--acento-fundo);
+    border-color: var(--acento-borda);
+    color: var(--acento-claro);
+}
+
+.filtro-grafico option {
+    background: var(--superficie-topo);
+    color: var(--tinta);
+}
+
+/* Campos de data: aparecem só quando o filtro está em "Escolher datas" */
+.filtro-data {
+    padding: 4px 8px;
+    background: var(--superficie-alta);
+    border: 1px solid var(--borda);
+    border-radius: 7px;
+    color: var(--tinta);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    color-scheme: dark;   /* faz o calendário nativo nascer escuro */
+}
+
+.filtro-data:focus {
+    outline: none;
+    border-color: var(--acento-borda);
+}
+
+.filtro-data::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+    cursor: pointer;
+}
+
+.filtro-ate {
+    color: var(--tinta-fraca);
+    font-size: 11px;
+    align-self: center;
+}
+
+/* Campo de data dentro de uma barra de filtros comum (Entradas,
+   Histórico de vendas): usa o mesmo tamanho dos outros controles da
+   barra, e não o tamanho reduzido dos filtros de painel. */
+.filtro-data-larga {
+    padding: 9px 12px;
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+    color: var(--tinta);
+    font-family: inherit;
+    font-size: 13.5px;
+    cursor: pointer;
+    color-scheme: dark;
+}
+
+.filtro-data-larga:focus {
+    outline: none;
+    background: var(--superficie-alta);
+    border-color: var(--acento-borda);
+}
+
+.filtro-data-larga::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+    cursor: pointer;
+}
+
+.filtros-painel {
+    align-items: center;
+}
+
+/* O cabecalho de painel que tem filtro precisa deixar espaco para ele.
+   Aqui, e so aqui, o bloco de filtros pode encolher: o ranking tem quatro
+   filtros num terco da tela e nao cabem em uma linha - sem isso o ultimo
+   saia cortado na borda do painel. Encolhendo, eles descem para a linha de
+   baixo em duas fileiras, encostados a direita. Nos cabecalhos de grafico
+   o bloco continua rigido, para nao quebrar quando ha espaco de sobra. */
+.table-title .filtros-painel {
+    margin-left: auto;
+    justify-content: flex-end;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+/* Painel estreito (um terco da tela): os filtros descem inteiros para a
+   linha de baixo em vez de disputar espaco com o titulo. Sem isso o
+   ranking, que tem quatro, quebrava em escadinha 1-2-1. */
+.tables-grid .table-title .filtros-painel {
+    flex-basis: 100%;
+}
+
+/* E cada select ocupa metade da linha. O select nasce com a largura da
+   opcao mais longa ("So ordens de servico"), nao da opcao escolhida, entao
+   sozinhos eles quebravam em escadinha 1-2-1. Em dois por linha o bloco
+   fica retangular e a largura para de depender do texto das opcoes. */
+.tables-grid .table-title .filtro-grafico {
+    flex: 1 1 calc(50% - 3px);
+    min-width: 0;
+}
+
+/* Legenda: sempre presente quando ha 2 ou mais series, para a
+   identidade nunca depender so da cor. */
+.legenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 12px 0 4px;
+}
+
+.legenda-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--tinta-media);
+    font-size: 12px;
+}
+
+.legenda-marca {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+}
+
+.grafico {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.grafico .grade-linha {
+    stroke: var(--grade);
+    stroke-width: 1;
+}
+
+.grafico .eixo {
+    stroke: var(--borda-forte);
+    stroke-width: 1;
+}
+
+.grafico .rotulo {
+    fill: var(--tinta-fraca);
+    font-size: 11px;
+}
+
+.grafico .rotulo-valor {
+    fill: var(--tinta-media);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+/* A barra inteira reage ao mouse, nao so o retangulo pintado -
+   alvo pequeno demais e a razao mais comum de tooltip que "nao abre". */
+.grafico .alvo {
+    fill: transparent;
+    cursor: pointer;
+}
+
+/* A opacidade e ligada pelo JS (graficos.js), e nao por :hover: o alvo
+   do mouse fica numa camada acima das barras e o realce numa camada
+   abaixo, entao nao ha seletor de irmao que ligue um ao outro. */
+.grafico .destaque-coluna {
+    fill: rgba(255, 255, 255, .05);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--rapido);
+}
+
+.grafico .marca-linha {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.grafico .marca-ponto {
+    stroke: var(--superficie);
+    stroke-width: 2;
+}
+
+.grafico .zero {
+    stroke: var(--tinta-fraca);
+    stroke-width: 1;
+    stroke-opacity: .55;
+}
+
+.dica-grafico {
+    position: fixed;
+    z-index: 300;
+    min-width: 168px;
+    padding: 11px 13px;
+    background: var(--superficie-topo);
+    border: 1px solid var(--borda-forte);
+    border-radius: var(--raio-p);
+    box-shadow: var(--sombra-alta);
+    font-size: 12.5px;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity var(--rapido), transform var(--rapido);
+}
+
+.dica-grafico.visivel {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.dica-titulo {
+    font-weight: 600;
+    margin-bottom: 7px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--borda);
+}
+
+.dica-linha {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 2px 0;
+}
+
+.dica-rotulo {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--tinta-media);
+}
+
+.dica-marca {
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+}
+
+.dica-valor {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------------
+   Rosca (parte-do-todo)
+   ------------------------------------------------------------------ */
+.rosca-caixa {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    flex-wrap: wrap;
+}
+
+.grafico.rosca {
+    flex: 0 0 220px;
+    width: 220px;
+    height: 220px;
+}
+
+.grafico .fatia {
+    transition: opacity var(--rapido);
+    cursor: pointer;
+}
+
+.rosca-total {
+    fill: var(--tinta);
+    font-size: 21px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.rosca-rotulo {
+    fill: var(--tinta-fraca);
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+/* A legenda é tabela, não lista solta: com valor e percentual em
+   colunas alinhadas dá para comparar fatias parecidas — coisa que no
+   círculo é adivinhação. Ela também abre a dica, porque acertar um
+   arco fino com o mouse é difícil e a linha é um alvo grande. */
+.legenda-rosca {
+    flex: 1 1 240px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.legenda-linha {
+    display: grid;
+    grid-template-columns: 10px 1fr auto auto;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 9px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background var(--rapido);
+}
+
+.legenda-linha:hover,
+.legenda-linha.ativa {
+    background: rgba(255, 255, 255, .05);
+}
+
+.legenda-nome {
+    color: var(--tinta-media);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.legenda-linha.ativa .legenda-nome {
+    color: var(--tinta);
+}
+
+.legenda-pct {
+    color: var(--tinta-fraca);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    min-width: 46px;
+    text-align: right;
+}
+
+.legenda-valor {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    min-width: 84px;
+    text-align: right;
+}
+
+@media (max-width: 560px) {
+    .rosca-caixa { justify-content: center; }
+    .grafico.rosca { flex-basis: 190px; width: 190px; height: 190px; }
+}
+
+/* ---------- KPI grande (o numero e o grafico) ---------- */
+.kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+}
+
+.kpi {
+    position: relative;
+    padding: 18px;
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio);
+    overflow: hidden;
+    transition: transform var(--suave), border-color var(--suave), box-shadow var(--suave);
+}
+
+.kpi:hover {
+    transform: translateY(-2px);
+    border-color: var(--borda-forte);
+    box-shadow: var(--sombra-alta);
+}
+
+.kpi-faixa {
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+}
+
+.kpi-rotulo {
+    color: var(--tinta-media);
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.kpi-valor {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -.03em;
+    line-height: 1.1;
+}
+
+.kpi-nota {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--tinta-fraca);
+    font-size: 12px;
+    margin-top: 7px;
+}
+
+/* A variacao vem com seta E sinal, nunca so com a cor. */
+.delta-sobe { color: var(--bom); }
+.delta-desce { color: var(--critico); }
+
+.barra-mini {
+    height: 5px;
+    margin-top: 11px;
+    background: rgba(255, 255, 255, .07);
+    border-radius: var(--raio-pill);
+    overflow: hidden;
+}
+
+.barra-mini i {
+    display: block;
+    height: 100%;
+    border-radius: var(--raio-pill);
+    transition: width var(--suave);
+}
+
+/* ---------- barras horizontais (ranking) ---------- */
+.ranking {
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+}
+
+.ranking-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 12px;
+    font-size: 13px;
+}
+
+.ranking-nome {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ranking-valor {
+    color: var(--tinta-media);
+    font-variant-numeric: tabular-nums;
+}
+
+.ranking-trilho {
+    grid-column: 1 / -1;
+    height: 7px;
+    background: rgba(255, 255, 255, .06);
+    border-radius: var(--raio-pill);
+    overflow: hidden;
+}
+
+.ranking-trilho i {
+    display: block;
+    height: 100%;
+    border-radius: var(--raio-pill);
+    background: var(--serie-1);
+}
+
+/* ==================================================================
+   6. Formularios e modal
+   ================================================================== */
+.formulario,
+.modal-corpo {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+    gap: 15px;
+}
+
+.campo {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.campo-total {
+    grid-column: 1 / -1;
+}
+
+.campo label {
+    color: var(--tinta-media);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-bottom: 7px;
+}
+
+.campo input,
+.campo select,
+.campo textarea {
+    width: 100%;
+    padding: 10px 13px;
+    background: var(--superficie-alta);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+    color: var(--tinta);
+    font-family: inherit;
+    font-size: 13.5px;
+    resize: vertical;
+    transition: border-color var(--rapido), box-shadow var(--rapido);
+}
+
+.campo input:focus,
+.campo select:focus,
+.campo textarea:focus {
+    outline: none;
+    border-color: var(--acento-borda);
+    box-shadow: 0 0 0 3px var(--acento-fundo);
+}
+
+.campo input:disabled,
+.campo select:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+.campo select option {
+    background: var(--superficie-topo);
+}
+
+.campo .dica {
+    color: var(--tinta-fraca);
+    font-size: 11px;
+    margin-top: 6px;
+}
+
+.formulario button {
+    grid-column: 1 / -1;
+    justify-self: start;
+}
+
+/* ---------- modal ---------- */
+.modal-fundo {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(6, 8, 12, .72);
+    backdrop-filter: blur(4px);
+    animation: aparecer var(--rapido);
+}
+
+.modal-caixa {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 840px;
+    max-height: 90vh;
+    background: var(--superficie-topo);
+    border: 1px solid var(--borda-forte);
+    border-radius: var(--raio);
+    box-shadow: var(--sombra-alta);
+    animation: entrar-modal var(--suave);
+}
+
+/* Tremida curta de recusa, para quem clicou fora sem querer entender
+   que o clique foi recebido - e que a janela continua ali. */
+@keyframes tremer {
+    0%, 100% { transform: translateX(0); }
+    15%      { transform: translateX(-7px); }
+    30%      { transform: translateX(7px); }
+    45%      { transform: translateX(-5px); }
+    60%      { transform: translateX(5px); }
+    80%      { transform: translateX(-2px); }
+}
+
+.modal-caixa.tremendo {
+    animation: tremer 480ms cubic-bezier(.36, .07, .19, .97);
+}
+
+.modal-caixa.tremendo {
+    border-color: var(--atencao);
+}
+
+/* O aviso vive dentro do rodapé, à esquerda dos botões: assim ele não
+   cobre nenhum campo do formulário. */
+.modal-aviso {
+    /* encolhe até caber; os botões é que mandam no espaço */
+    flex: 1 1 180px;
+    min-width: 0;
+    margin-right: auto;
+    padding: 9px 13px;
+    background: rgba(250, 178, 25, .08);
+    border: 1px solid rgba(250, 178, 25, .35);
+    border-left: 3px solid var(--atencao);
+    border-radius: var(--raio-p);
+    color: var(--tinta-media);
+    font-size: 12.5px;
+    line-height: 1.4;
+    text-align: left;
+    animation: entrar-lado var(--suave);
+}
+
+.modal-aviso strong {
+    color: var(--tinta);
+    font-weight: 600;
+}
+
+.modal-aviso.sumindo {
+    opacity: 0;
+    transform: translateX(10px);
+    transition: opacity var(--suave), transform var(--suave);
+}
+
+.modal-caixa {
+    position: relative;   /* âncora do aviso acima */
+}
+
+.modal-topo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--borda);
+}
+
+.modal-topo h3 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.modal-fechar {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    background: transparent;
+    border: none;
+    border-radius: 7px;
+    color: var(--tinta-media);
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all var(--rapido);
+}
+
+.modal-fechar:hover {
+    background: rgba(255, 255, 255, .08);
+    color: var(--tinta);
+}
+
+/*
+ * O <form> fica ENTRE a caixa (que limita a altura) e o corpo (que
+ * rola), e por isso precisa participar do flex.
+ *
+ * Sem isto, ele crescia livre: numa tela de 768px o formulário da OS
+ * ficava com 1353px, o corpo nunca chegava a rolar (scrollHeight igual
+ * ao clientHeight) e o rodapé com Cancelar/Salvar era desenhado em
+ * 1459px - ou seja, fora da tela. Era o "as informações saem do modal".
+ *
+ * min-height:0 é a peça que falta com mais frequência: sem ele, um item
+ * flex se recusa a encolher abaixo do conteúdo, e o overflow do filho
+ * nunca é acionado.
+ */
+#modalForm {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.modal-corpo {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;   /* a rolagem não vaza para a página */
+    padding: 22px;
+}
+
+.modal-rodape {
+    flex-shrink: 0;   /* os botões nunca são espremidos para fora */
+}
+
+.modal-rodape {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 22px;
+    border-top: 1px solid var(--borda);
+}
+
+/* Os botões nunca quebram linha nem encolhem por causa do aviso */
+.modal-rodape .botao {
+    flex-shrink: 0;
+}
+
+/* ------------------------------------------------------------------
+   Painel de status da ordem de serviço
+   ------------------------------------------------------------------ */
+.painel-os {
+    padding: 18px 20px;
+    background:
+        radial-gradient(120% 140% at 0% 0%, rgba(57,135,229,.16), transparent 58%),
+        linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.012));
+    border: 1px solid var(--borda-forte);
+    border-radius: var(--raio);
+    margin-bottom: 4px;
+}
+
+.painel-os-topo {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.painel-os-numero {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+
+.painel-os-sub {
+    color: var(--tinta-media);
+    font-size: 12.5px;
+    margin-top: 3px;
+}
+
+.painel-os-etiqueta {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: color-mix(in srgb, var(--cor-status) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--cor-status) 45%, transparent);
+    border-radius: var(--raio-pill);
+    color: var(--cor-status);
+    font-size: 12.5px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Ponto que respira: diz "este é o estado agora", sem escrever mais nada */
+.pulso {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    box-shadow: 0 0 0 0 currentColor;
+    animation: pulsar 2.2s ease-out infinite;
+}
+
+@keyframes pulsar {
+    0%   { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+    70%  { box-shadow: 0 0 0 7px transparent; opacity: .75; }
+    100% { box-shadow: 0 0 0 0 transparent; opacity: 1; }
+}
+
+/* ---------- trilha ---------- */
+.trilha {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+/* A linha percorrida fica ATRÁS das bolinhas, ligando o começo até o
+   passo atual. */
+.trilha-progresso {
+    position: absolute;
+    left: 0;
+    top: 13px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--serie-1), var(--serie-3));
+    border-radius: 2px;
+    transition: width var(--suave);
+    z-index: 0;
+}
+
+.passo {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+}
+
+.passo-linha {
+    flex: 1;
+    height: 2px;
+    background: var(--borda);
+    margin-top: -18px;
+}
+
+.passo-bola {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--superficie);
+    border: 2px solid var(--borda-forte);
+    color: var(--tinta-fraca);
+    font-size: 12px;
+    font-weight: 600;
+    transition: all var(--suave);
+}
+
+.passo-nome {
+    color: var(--tinta-fraca);
+    font-size: 11px;
+    white-space: nowrap;
+    transition: color var(--suave);
+}
+
+.passo.feito .passo-bola {
+    background: var(--serie-3);
+    border-color: var(--serie-3);
+    color: #fff;
+}
+
+.passo.feito .passo-nome {
+    color: var(--tinta-media);
+}
+
+.passo.agora .passo-bola {
+    background: var(--cor-passo, var(--acento));
+    border-color: var(--cor-passo, var(--acento));
+    color: #fff;
+    transform: scale(1.18);
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--cor-passo, var(--acento)) 22%, transparent);
+}
+
+.passo.agora .passo-nome {
+    color: var(--tinta);
+    font-weight: 600;
+}
+
+.painel-os-encerrado {
+    padding: 12px 15px;
+    background: rgba(208, 59, 59, .1);
+    border: 1px solid rgba(208, 59, 59, .3);
+    border-radius: var(--raio-p);
+    color: var(--tinta-media);
+    font-size: 13px;
+}
+
+.painel-os-numeros {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--borda);
+}
+
+.painel-os-numero-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.painel-os-numero-item span {
+    color: var(--tinta-fraca);
+    font-size: 10.5px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.painel-os-numero-item strong {
+    font-size: 14px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.painel-os-numero-item.destaque strong {
+    color: var(--serie-3);
+    font-size: 16px;
+}
+
+/* ------------------------------------------------------------------
+   Interruptor (sim/não)
+   ------------------------------------------------------------------ */
+.interruptor {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+    padding: 6px 0;
+}
+
+/* O input real continua no DOM (teclado e leitor de tela alcançam),
+   apenas invisível atrás do desenho. */
+.interruptor input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.interruptor-trilho {
+    position: relative;
+    width: 42px;
+    height: 23px;
+    background: var(--superficie-alta);
+    border: 1px solid var(--borda-forte);
+    border-radius: var(--raio-pill);
+    transition: all var(--rapido);
+    flex-shrink: 0;
+}
+
+.interruptor-bola {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 17px;
+    height: 17px;
+    background: var(--tinta-fraca);
+    border-radius: 50%;
+    transition: all var(--rapido);
+}
+
+.interruptor input:checked + .interruptor-trilho {
+    background: color-mix(in srgb, var(--serie-3) 30%, transparent);
+    border-color: var(--serie-3);
+}
+
+.interruptor input:checked + .interruptor-trilho .interruptor-bola {
+    left: 21px;
+    background: var(--serie-3);
+}
+
+.interruptor input:focus-visible + .interruptor-trilho {
+    outline: 2px solid var(--acento);
+    outline-offset: 2px;
+}
+
+.interruptor-texto {
+    color: var(--tinta-media);
+    font-size: 13px;
+}
+
+.interruptor input:checked ~ .interruptor-texto {
+    color: var(--tinta);
+}
+
+/* ---------- editor de itens ---------- */
+.editor-itens {
+    grid-column: 1 / -1;
+    padding: 16px;
+    background: rgba(0, 0, 0, .22);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+}
+
+.editor-itens h4 {
+    color: var(--tinta-media);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-bottom: 13px;
+}
+
+/* Lista fechada: some o convite a mexer, fica o registro do que foi
+   usado. A faixa âmbar à esquerda é a mesma linguagem do aviso do modal. */
+.editor-itens.travado {
+    border-color: rgba(250, 178, 25, .3);
+    border-left: 3px solid var(--atencao);
+}
+
+.editor-travado {
+    padding: 11px 14px;
+    margin-bottom: 14px;
+    background: rgba(250, 178, 25, .08);
+    border-radius: var(--raio-p);
+    color: var(--tinta-media);
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.editor-travado strong {
+    color: var(--atencao);
+}
+
+.editor-travado em {
+    color: var(--tinta);
+    font-style: normal;
+    font-weight: 500;
+}
+
+.editor-itens.travado .item-linha select,
+.editor-itens.travado .item-linha input {
+    opacity: .65;
+    cursor: not-allowed;
+}
+
+.item-cadeado {
+    display: grid;
+    place-items: center;
+    height: 36px;
+    font-size: 13px;
+    opacity: .5;
+}
+
+/* Peças passando do orçamento: quase sempre um dígito a mais em algum
+   campo, e o único momento de pegar isso é antes de salvar. */
+.alerta-orcamento {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: rgba(208, 59, 59, .1);
+    border: 1px solid rgba(208, 59, 59, .35);
+    border-left: 3px solid var(--critico);
+    border-radius: var(--raio-p);
+    color: var(--tinta-media);
+    font-size: 12.5px;
+    line-height: 1.45;
+    animation: entrar-lado var(--rapido);
+}
+
+.alerta-orcamento strong {
+    color: var(--tinta);
+    font-variant-numeric: tabular-nums;
+}
+
+.item-cabecalho,
+.item-linha {
+    display: grid;
+    grid-template-columns: 1fr 88px 118px 38px;
+    gap: 9px;
+    align-items: center;
+}
+
+.item-cabecalho {
+    color: var(--tinta-fraca);
+    font-size: 10.5px;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.item-linha {
+    margin-bottom: 9px;
+}
+
+.item-linha select,
+.item-linha input,
+.pagamento-linha select,
+.pagamento-linha input {
+    width: 100%;
+    padding: 9px 11px;
+    background: var(--superficie-alta);
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    color: var(--tinta);
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.item-linha select option,
+.pagamento-linha select option {
+    background: var(--superficie-topo);
+}
+
+.item-linha select:focus,
+.item-linha input:focus,
+.pagamento-linha select:focus,
+.pagamento-linha input:focus {
+    outline: none;
+    border-color: var(--acento-borda);
+}
+
+.item-remover {
+    display: grid;
+    place-items: center;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--borda);
+    border-radius: 8px;
+    color: var(--tinta-fraca);
+    font-size: 17px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all var(--rapido);
+}
+
+.item-remover:hover {
+    background: rgba(208, 59, 59, .14);
+    border-color: rgba(208, 59, 59, .45);
+    color: var(--grave);
+}
+
+.editor-rodape {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 13px;
+    padding-top: 13px;
+    border-top: 1px solid var(--borda);
+}
+
+.editor-total {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.editor-total span {
+    color: var(--tinta-fraca);
+    font-size: 12px;
+    font-weight: 400;
+    margin-right: 8px;
+}
+
+/* ==================================================================
+   7. Movimento
+   ================================================================== */
+@keyframes aparecer {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes entrar-modal {
+    from { opacity: 0; transform: translateY(12px) scale(.985); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes entrar-lado {
+    from { opacity: 0; transform: translateX(18px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes subir {
+    from { opacity: 0; transform: translateY(9px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* A secao que entra sobe de leve. Os filhos entram em cascata curta:
+   passar de ~5 degraus vira espera, nao charme. */
+.secao:not(.oculta) {
+    animation: subir var(--suave) both;
+}
+
+.secao:not(.oculta) > *:nth-child(1) { animation: subir var(--suave) both 20ms; }
+.secao:not(.oculta) > *:nth-child(2) { animation: subir var(--suave) both 45ms; }
+.secao:not(.oculta) > *:nth-child(3) { animation: subir var(--suave) both 70ms; }
+.secao:not(.oculta) > *:nth-child(4) { animation: subir var(--suave) both 95ms; }
+.secao:not(.oculta) > *:nth-child(n+5) { animation: subir var(--suave) both 115ms; }
+
+/* Quem pediu menos movimento no sistema recebe menos movimento. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+    }
+}
+
+/* ==================================================================
+   8. Telas estreitas
+   ================================================================== */
+@media (max-width: 1080px) {
+    .tables-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 860px) {
+    .app {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: var(--sidebar);
+        background: var(--superficie);
+        transform: translateX(-100%);
+        transition: transform var(--suave);
+    }
+
+    .sidebar.aberta {
+        transform: none;
+        box-shadow: var(--sombra-alta);
+    }
+
+    .abrir-menu {
+        display: block;
+    }
+
+    .sombra-menu {
+        position: fixed;
+        inset: 0;
+        z-index: 19;
+        background: rgba(6, 8, 12, .6);
+    }
+
+    main,
+    .topbar {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .stats-container,
+    .kpis {
+        grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+    }
+
+    .item-cabecalho,
+    .item-linha {
+        grid-template-columns: 1fr 62px 92px 34px;
+    }
+
+    .modal-corpo {
+        grid-template-columns: 1fr;
+    }
+
+    /*
+     * O SVG do grafico encolhe junto com a tela, e o texto dentro dele
+     * encolhe na mesma proporcao - num celular os meses ficavam com uns
+     * 4px, ilegiveis. Como a fonte esta em unidades do viewBox, aumentar
+     * aqui devolve o tamanho aparente.
+     */
+    .grafico .rotulo { font-size: 17px; }
+    .grafico .rotulo-valor { font-size: 17px; }
+}
+
+@media (max-width: 520px) {
+    .stat-value { font-size: 21px; }
+    .kpi-valor  { font-size: 22px; }
+    .secao-topo .grupo-botoes { width: 100%; }
+    .secao-topo .grupo-botoes .botao { flex: 1; justify-content: center; }
+}
+
+/* ------------------------------------------------------------------
+   Serviços e pagamento dividido na OS
+   ------------------------------------------------------------------ */
+
+/* Dois botões no rodapé do editor: peça do estoque e serviço. */
+.editor-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* A linha de serviço usa a mesma grade da peça — é a mesma coisa para a
+   ordem — mas ganha uma marca à esquerda, porque as duas se parecem e
+   quem revisa a OS precisa distinguir peça de mão de obra num relance. */
+.item-linha.servico > select {
+    border-left: 3px solid var(--serie-4);
+    padding-left: 9px;
+}
+
+.pagamento-linha {
+    display: grid;
+    grid-template-columns: 1fr 132px 38px;
+    gap: 9px;
+    align-items: center;
+    margin-bottom: 9px;
+}
+
+.pagamento-cabecalho {
+    display: grid;
+    grid-template-columns: 1fr 132px 38px;
+    gap: 9px;
+}
+
+/* O rodapé é o aviso: verde quando fecha, vermelho quando não. A cor
+   sozinha não diz nada — o texto ao lado ("Falta lançar", "Fecha em",
+   "Passou em") é que carrega o significado. */
+.editor-itens.pagamento-fecha .editor-total b {
+    color: var(--bom);
+}
+
+.editor-itens.pagamento-erra .editor-total b {
+    color: var(--critico);
+}
+
+.editor-itens.pagamento-erra {
+    border-color: rgba(208, 59, 59, .35);
+}
+
+@media (max-width: 620px) {
+    .pagamento-linha,
+    .pagamento-cabecalho {
+        grid-template-columns: 1fr 96px 34px;
+    }
+}
+
+/* ---------- erro de gravação dentro da janela ----------
+   Fica entre o formulário e os botões e não some sozinho: é a resposta
+   do servidor (sessão que caiu, OS alterada em outra aba, valor recusado)
+   e a pessoa precisa lê-la com calma antes de clicar em Salvar de novo. */
+.modal-erro {
+    margin: 0 22px;
+    padding: 10px 14px;
+    background: rgba(208, 59, 59, .1);
+    border: 1px solid rgba(208, 59, 59, .35);
+    border-left: 3px solid var(--critico);
+    border-radius: var(--raio-p);
+    color: var(--tinta);
+    font-size: 13px;
+    line-height: 1.45;
+    animation: entrar-lado var(--rapido);
+}
+
+/* Aviso fixo no topo de um formulário (venda de OS, venda cancelada). */
+.aviso-formulario {
+    padding: 11px 14px;
+    background: rgba(250, 178, 25, .08);
+    border: 1px solid rgba(250, 178, 25, .3);
+    border-left: 3px solid var(--atencao);
+    border-radius: var(--raio-p);
+    color: var(--tinta-media);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.aviso-formulario strong {
+    color: var(--tinta);
+}
+
+/* Campo travado (valor do lançamento gerado por venda/OS/compra). */
+.modal-corpo input[readonly] {
+    opacity: .7;
+    cursor: not-allowed;
+}
+
+/* ---------- troca obrigatória de senha ----------
+   Acima de qualquer outra janela: pode abrir por cima de um formulário
+   quando o servidor responde "troque sua senha" no meio do uso. */
+.troca-senha {
+    z-index: 200;
+}
+
+.modal-estreita {
+    max-width: 440px;
+}
+
+.modal-erro-texto {
+    color: var(--critico);
+    font-size: 13px;
+    min-height: 1em;
+}
+
+/* ---------- perfis ----------
+   Técnico e balcão não veem relatórios, financeiro nem botão de excluir
+   (config.pode_ver_financeiro / config.pode_excluir). */
+.sem-financeiro [data-so-financeiro] {
+    display: none !important;
+}
+
+.sem-exclusao .botao-icone.perigo,
+.sem-exclusao .botao-excluir {
+    display: none !important;
+}
+
+.editor-itens.pagamento-erra [data-pag-rotulo] {
+    color: var(--critico);
+}
+
+/* Acoes dentro do aviso de erro da janela (409: recarregar / copiar). */
+.modal-erro-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.modal-erro.modal-ok {
+    background: color-mix(in srgb, var(--bom) 12%, transparent);
+    border-color: color-mix(in srgb, var(--bom) 40%, transparent);
+    border-left-color: var(--bom);
+}
+
+.copia-digitado {
+    width: 100%;
+    margin-top: 10px;
+    font-size: 12.5px;
+}
+
+/* Login dentro da janela, quando a sessao cai com um formulario aberto. */
+.login-na-janela {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.login-na-janela input {
+    flex: 1 1 140px;
+    min-width: 0;
+}
+
+.login-na-janela-erro {
+    flex-basis: 100%;
+    color: var(--critico);
+    font-size: 12.5px;
+}
+
+.login-na-janela-erro:empty {
+    display: none;
+}
+
+/* Aviso ao vivo de saldo somado no editor de itens. */
+.aviso-saldo {
+    margin-top: 10px;
+    padding: 9px 13px;
+    border-left: 3px solid var(--atencao);
+    border-radius: var(--raio-p);
+    background: color-mix(in srgb, var(--atencao) 9%, transparent);
+    color: var(--tinta-media);
+    font-size: 12.5px;
+}
+
+/* /api/config nao veio: o painel nao abre pela metade. */
+.falha-config {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(6, 8, 12, .8);
+}
+
+.falha-config > div {
+    max-width: 460px;
+    padding: 24px;
+    border: 1px solid var(--borda-forte);
+    border-radius: var(--raio);
+    background: var(--superficie-topo);
+    color: var(--tinta);
+}
+
+.falha-config p {
+    color: var(--tinta-media);
+    margin: 10px 0 16px;
+}
+
+/* ==================================================================
+   9. Inicio, PDV e Admin (v6)
+   ------------------------------------------------------------------
+   Os mesmos tokens do bloco 1. No PDV a unica peca que grita e o
+   TOTAL com o botao de finalizar: e o que o caixa olha o dia inteiro.
+   O resto e quieto, para a busca e o cupom se lerem de longe.
+   ================================================================== */
+
+/* ---------- utilitarios ---------- */
+.oculto-visual {
+    position: absolute !important;
+    width: 1px; height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+kbd {
+    display: inline-block;
+    min-width: 22px;
+    padding: 1px 6px;
+    border: 1px solid var(--borda-forte);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    background: var(--superficie-alta);
+    color: var(--tinta-media);
+    font: 600 11px/1.5 'Poppins', sans-serif;
+    text-align: center;
+}
+
+.menu-tecla {
+    margin-left: 6px;
+    font-size: 10px;
+    padding: 0 5px;
+}
+
+.menu-encolhido .menu-tecla { display: none; }
+
+.sem-admin [data-so-admin] { display: none !important; }
+
+/* ---------- campo de lista (marca, cor...) ---------- */
+/* O select ocupa a largura do campo; "+ Nova ..." fica embaixo, discreto,
+   e a caixinha do valor novo tambem: cabe na coluna mais estreita da janela. */
+.lista-campo {
+    display: grid;
+    gap: 6px;
+}
+
+.lista-campo .lista-novo {
+    justify-self: start;
+    padding: 3px 10px;
+    font-size: 12px;
+}
+
+.lista-novo-caixa {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    padding: 10px;
+    border: 1px dashed var(--acento-borda);
+    border-radius: var(--raio-p);
+    background: var(--acento-fundo);
+}
+
+.lista-novo-caixa input { grid-column: 1 / -1; }
+.lista-novo-caixa [data-lista-gravar] { justify-self: start; }
+
+.lista-novo-caixa.oculta,
+.lista-campo .lista-novo.oculta { display: none; }
+
+/* ---------- Inicio ---------- */
+#inicioConteudo { display: flex; flex-direction: column; gap: 18px; }
+.inicio-cabeca { display: grid; gap: 2px; }
+
+.inicio-ola {
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+}
+
+.inicio-loja { color: var(--tinta-fraca); font-size: 13px; }
+
+.inicio-destaque {
+    display: grid;
+    gap: 6px;
+    justify-items: start;
+    width: 100%;
+    padding: 26px 28px;
+    text-align: left;
+    color: var(--tinta);
+    font: inherit;
+    cursor: pointer;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--acento) 22%, var(--superficie)) 0%, var(--superficie) 70%);
+    border: 1px solid var(--acento-borda);
+    border-radius: var(--raio);
+    box-shadow: var(--sombra);
+    transition: border-color var(--rapido), transform var(--rapido);
+}
+
+.inicio-destaque:hover { border-color: var(--acento-claro); transform: translateY(-1px); }
+.inicio-destaque:focus-visible { outline: 3px solid var(--acento-claro); outline-offset: 3px; }
+
+.destaque-rotulo { color: var(--acento-claro); font-size: 12px; font-weight: 600; }
+.destaque-titulo { font-size: clamp(24px, 3.4vw, 34px); font-weight: 600; letter-spacing: -0.02em; }
+.destaque-texto { color: var(--tinta-media); max-width: 62ch; font-size: 14px; }
+.destaque-tecla { color: var(--tinta-fraca); font-size: 12px; margin-top: 6px; }
+
+.inicio-agora {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.agora-item {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 14px 16px;
+    font: inherit;
+    color: var(--tinta-media);
+    text-align: left;
+    cursor: pointer;
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+}
+
+.agora-item strong {
+    color: var(--tinta);
+    font-size: 24px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.agora-item.agora-alerta { border-color: color-mix(in srgb, var(--atencao) 45%, transparent); }
+.agora-item.agora-alerta strong { color: var(--atencao); }
+.agora-item:hover { border-color: var(--borda-forte); }
+
+.inicio-secao { font-size: 15px; font-weight: 600; color: var(--tinta-media); margin-top: 6px; }
+
+.inicio-modulos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 12px;
+}
+
+.modulo {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 12px;
+    row-gap: 2px;
+    align-items: start;
+    padding: 16px;
+    font: inherit;
+    color: var(--tinta);
+    text-align: left;
+    cursor: pointer;
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+    transition: border-color var(--rapido), background var(--rapido);
+}
+
+.modulo svg {
+    grid-row: 1 / 3;
+    width: 36px; height: 36px;
+    padding: 7px;
+    fill: none;
+    stroke: var(--acento-claro);
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    background: var(--acento-fundo);
+    border-radius: 9px;
+}
+
+.modulo-titulo { font-weight: 600; font-size: 14px; }
+.modulo-texto { color: var(--tinta-fraca); font-size: 12.5px; line-height: 1.45; }
+
+button.modulo:hover { border-color: var(--acento-borda); background: var(--superficie-alta); }
+.modulo:focus-visible { outline: 3px solid var(--acento-claro); outline-offset: 2px; }
+
+.modulo-planejado { cursor: default; opacity: .7; }
+.modulo-planejado svg { stroke: var(--tinta-fraca); background: var(--superficie-alta); }
+.modulo-planejado .etiqueta { font-size: 10px; padding: 1px 8px; margin-left: 4px; }
+
+/* ---------- PDV: tela cheia ---------- */
+.tela-cheia .app { grid-template-columns: 1fr; }
+.tela-cheia .sidebar,
+.tela-cheia .topbar,
+.tela-cheia footer { display: none; }
+.tela-cheia main { padding: 0; }
+
+.pdv {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    min-height: 100vh;
+    background: var(--fundo);
+}
+
+.pdv-topo {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 12px 22px;
+    background: var(--superficie);
+    border-bottom: 1px solid var(--borda);
+}
+
+.pdv-marca { display: flex; align-items: baseline; gap: 10px; }
+.pdv-marca strong { font-size: 18px; letter-spacing: 0.06em; color: var(--acento-claro); }
+.pdv-marca span { color: var(--tinta-media); font-size: 13px; }
+
+.pdv-teclas { display: flex; gap: 14px; color: var(--tinta-fraca); font-size: 12px; margin-left: auto; }
+.pdv-teclas span { display: inline-flex; align-items: center; gap: 5px; }
+.pdv-operador { color: var(--tinta-media); font-size: 12.5px; }
+
+.pdv-corpo {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(380px, 0.85fr);
+    min-height: 0;
+}
+
+/* catalogo (esquerda) */
+.pdv-catalogo {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px 22px;
+    min-height: 0;
+    border-right: 1px solid var(--borda);
+}
+
+.pdv-busca {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 16px;
+    background: var(--superficie-alta);
+    border: 1px solid var(--borda-forte);
+    border-radius: var(--raio-p);
+}
+
+.pdv-busca:focus-within { border-color: var(--acento-borda); box-shadow: 0 0 0 3px var(--acento-fundo); }
+.pdv-busca svg { width: 20px; height: 20px; fill: none; stroke: var(--tinta-fraca); stroke-width: 2; flex: none; }
+
+.pdv-busca input {
+    flex: 1;
+    min-width: 0;
+    padding: 15px 0;
+    font: 500 17px 'Poppins', sans-serif;
+    color: var(--tinta);
+    background: transparent;
+    border: 0;
+    outline: none;
+}
+
+.pdv-filtros { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.pdv-filtro {
+    padding: 6px 14px;
+    font: 500 12.5px 'Poppins', sans-serif;
+    color: var(--tinta-media);
+    background: transparent;
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-pill);
+    cursor: pointer;
+}
+
+.pdv-filtro[aria-pressed="true"] { color: var(--tinta); background: var(--acento-fundo); border-color: var(--acento-borda); }
+
+.pdv-resultados {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+    overflow-y: auto;
+    max-height: calc(100vh - 210px);
+    align-content: start;
+}
+
+.pdv-resultado {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "nome preco" "detalhe preco";
+    gap: 2px 14px;
+    width: 100%;
+    padding: 11px 14px;
+    font: inherit;
+    color: var(--tinta);
+    text-align: left;
+    cursor: pointer;
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+}
+
+.pdv-resultado:hover,
+.pdv-resultado.destaque { border-color: var(--acento-borda); background: var(--superficie-alta); }
+.pdv-resultado.destaque { box-shadow: inset 3px 0 0 var(--acento); }
+
+.resultado-nome { grid-area: nome; font-weight: 500; font-size: 14px; }
+.resultado-detalhe { grid-area: detalhe; color: var(--tinta-fraca); font-size: 12px; }
+.resultado-preco { grid-area: preco; align-self: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.pdv-vazio { color: var(--tinta-fraca); font-size: 13px; padding: 14px 4px; list-style: none; }
+
+/* cupom (direita) */
+.pdv-cupom {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px 22px;
+    background: var(--superficie);
+    min-height: 0;
+}
+
+.pdv-cliente label { display: block; font-size: 12px; color: var(--tinta-fraca); margin-bottom: 6px; }
+.pdv-obrigatorio { color: var(--atencao); margin-left: 6px; }
+.pdv-cliente-linha { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+
+.pdv-cupom select,
+.pdv-cupom input[type="text"],
+.pdv-cupom input[type="tel"],
+.pdv-cupom input[type="number"] {
+    padding: 9px 12px;
+    font: 500 14px 'Poppins', sans-serif;
+    color: var(--tinta);
+    background: var(--superficie-alta);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+    min-width: 0;
+}
+
+.pdv-cupom select:focus,
+.pdv-cupom input:focus { outline: none; border-color: var(--acento-borda); box-shadow: 0 0 0 3px var(--acento-fundo); }
+.pdv-cupom select option { background: var(--superficie-topo); }
+
+.pdv-cliente-novo { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 8px; margin-top: 8px; }
+.pdv-cliente-novo.oculta { display: none; }
+
+.pdv-itens { flex: 1; min-height: 120px; overflow-y: auto; }
+.pdv-linhas { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+
+.pdv-linha {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto 96px 92px 28px;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--borda-forte);
+}
+
+.linha-nome { display: grid; min-width: 0; }
+.linha-nome span { font-weight: 500; font-size: 13.5px; overflow-wrap: anywhere; }
+.linha-nome small { color: var(--tinta-fraca); font-size: 11.5px; }
+
+.linha-qtd { display: flex; align-items: center; gap: 4px; }
+.pdv-cupom .linha-qtd input { width: 52px; text-align: center; padding: 6px 4px; }
+.linha-qtd-fixa { color: var(--tinta-media); text-align: center; min-width: 40px; }
+
+.linha-preco { display: grid; }
+.pdv-cupom .linha-preco input { width: 100%; text-align: right; padding: 6px 8px; font-variant-numeric: tabular-nums; }
+.linha-preco input[readonly] { opacity: .65; cursor: not-allowed; }
+.linha-preco small { color: var(--atencao); font-size: 10.5px; text-align: right; }
+
+.linha-subtotal { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; }
+.perigo-leve:hover { color: var(--critico); border-color: color-mix(in srgb, var(--critico) 40%, transparent); }
+
+.pdv-resumo { display: grid; gap: 6px; padding-top: 4px; }
+
+.resumo-linha {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--tinta-media);
+    font-variant-numeric: tabular-nums;
+}
+
+.resumo-desconto label { flex: none; }
+.desconto-campo { display: inline-flex; gap: 6px; margin-left: auto; }
+.pdv-cupom .desconto-campo input { width: 100px; text-align: right; }
+
+.desconto-modo {
+    min-width: 42px;
+    font: 600 13px 'Poppins', sans-serif;
+    color: var(--acento-claro);
+    background: var(--acento-fundo);
+    border: 1px solid var(--acento-borda);
+    border-radius: var(--raio-p);
+    cursor: pointer;
+}
+
+.resumo-desconto > span:last-child { min-width: 100px; text-align: right; }
+.fora-do-limite,
+.fora-do-limite > span:last-child { color: var(--critico); }
+.pdv-cupom .fora-do-limite input { border-color: var(--critico); }
+.resumo-nota { color: var(--tinta-fraca); font-size: 12px; text-align: right; }
+
+.resumo-total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-top: 10px;
+    border-top: 1px solid var(--borda-forte);
+}
+
+.resumo-total span { color: var(--tinta-media); font-size: 14px; }
+
+.resumo-total strong {
+    font-size: clamp(32px, 4vw, 44px);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+}
+
+.pagamento-titulo { font-size: 12px; color: var(--tinta-fraca); margin-bottom: 8px; }
+.pdv-formas { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+.pdv-forma {
+    padding: 9px 14px;
+    font: 500 13px 'Poppins', sans-serif;
+    color: var(--tinta-media);
+    background: var(--superficie-alta);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+    cursor: pointer;
+}
+
+.pdv-forma[aria-checked="true"] { color: var(--tinta); background: var(--acento-fundo); border-color: var(--acento); }
+.pdv-forma:focus-visible { outline: 3px solid var(--acento-claro); outline-offset: 2px; }
+
+.pagamento-detalhe { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 10px; }
+.pagamento-campo { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--tinta-media); }
+.pdv-cupom .pagamento-campo input[type="text"] { width: 120px; text-align: right; }
+.pagamento-recebi input { width: 18px; height: 18px; accent-color: var(--acento); }
+.pagamento-nota { color: var(--tinta-fraca); font-size: 12px; }
+
+.pdv-troco { font-weight: 600; color: var(--bom); font-variant-numeric: tabular-nums; }
+.pdv-troco.falta { color: var(--critico); }
+
+.pdv-erro { min-height: 18px; margin: 0; color: var(--critico); font-size: 13px; }
+
+.pdv-acoes { display: grid; grid-template-columns: auto 1fr; gap: 10px; }
+
+.pdv-finalizar {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    font: 600 16px 'Poppins', sans-serif;
+    color: #fff;
+    background: var(--acento);
+    border: 0;
+    border-radius: var(--raio-p);
+    cursor: pointer;
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--acento) 35%, transparent);
+}
+
+.pdv-finalizar strong { font-size: 22px; font-variant-numeric: tabular-nums; margin-left: auto; }
+.pdv-finalizar kbd { background: rgba(0, 0, 0, .18); border-color: rgba(255, 255, 255, .3); color: #fff; }
+.pdv-finalizar:hover:not(:disabled) { background: var(--acento-claro); }
+.pdv-finalizar:focus-visible { outline: 3px solid var(--acento-claro); outline-offset: 3px; }
+.pdv-finalizar:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+
+/* venda concluida */
+.pdv-concluida {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    background: rgba(5, 7, 12, .72);
+}
+
+.pdv-concluida.oculta { display: none; }
+
+.concluida-caixa {
+    display: grid;
+    gap: 6px;
+    justify-items: center;
+    width: min(440px, 100%);
+    padding: 30px 28px;
+    text-align: center;
+    background: var(--superficie-topo);
+    border: 1px solid color-mix(in srgb, var(--bom) 45%, transparent);
+    border-radius: var(--raio);
+    box-shadow: var(--sombra-alta);
+}
+
+.concluida-caixa h2 { font-size: 18px; font-weight: 600; color: var(--bom); }
+.concluida-total { font-size: 40px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.concluida-forma { color: var(--tinta-media); font-size: 13px; }
+.concluida-troco { font-size: 18px; margin-top: 6px; }
+.concluida-troco strong { color: var(--atencao); font-variant-numeric: tabular-nums; }
+.concluida-acoes { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 16px; }
+.concluida-acoes kbd { margin-left: 6px; }
+
+@media (max-width: 980px) {
+    .pdv-corpo { grid-template-columns: 1fr; }
+    .pdv-catalogo { border-right: 0; border-bottom: 1px solid var(--borda); }
+    .pdv-resultados { max-height: 42vh; }
+    .pdv-teclas { display: none; }
+}
+
+@media (max-width: 520px) {
+    .pdv-topo { flex-wrap: wrap; padding: 10px 16px; gap: 10px; }
+    .pdv-catalogo,
+    .pdv-cupom { padding: 16px; }
+    .pdv-linha { grid-template-columns: minmax(0, 1fr) auto auto 28px; }
+    .pdv-linha .linha-nome { grid-column: 1 / -1; }
+    .pdv-cliente-novo { grid-template-columns: 1fr 1fr; }
+    .pdv-acoes { grid-template-columns: 1fr; }
+}
+
+/* ---------- Admin ---------- */
+.admin-explica { max-width: 78ch; }
+.tabela-regras td { vertical-align: top; }
+
+.tabela-regras select,
+.tabela-regras input {
+    width: 130px;
+    padding: 8px 10px;
+    font: 500 13px 'Poppins', sans-serif;
+    color: var(--tinta);
+    background: var(--superficie-alta);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+}
+
+.tabela-regras select option { background: var(--superficie-topo); }
+.regra-chave { color: var(--tinta-fraca); font-size: 11px; }
+.admin-painel { display: flex; flex-direction: column; gap: var(--gap); margin-top: 14px; }
+.admin-empresa .formulario { max-width: 560px; }
+
+.admin-lista { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 4px; }
+
+.admin-lista li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--borda);
+}
+
+.admin-lista li.inativo span { color: var(--tinta-fraca); text-decoration: line-through; }
+.admin-lista-nova { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+
+.admin-lista-nova input {
+    padding: 8px 12px;
+    font: 500 13px 'Poppins', sans-serif;
+    color: var(--tinta);
+    background: var(--superficie-alta);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .inicio-destaque,
+    .modulo { transition: none; }
+    .inicio-destaque:hover { transform: none; }
+}
+
+/* ==================================================================
+   10. Fiscal, Pedido de entrada e PDV completo (v7)
+   ================================================================== */
+
+/* ---------- PDV: observacao e "Nao informar" ---------- */
+.pdv-observacao {
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--tinta-fraca);
+}
+
+.pdv-cupom .pdv-observacao input { width: 100%; }
+.pdv-forma-nenhuma { border-style: dashed; }
+.pdv-cupom input[type="date"] {
+    padding: 8px 10px;
+    font: 500 13px 'Poppins', sans-serif;
+    color: var(--tinta);
+    background: var(--superficie-alta);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+    color-scheme: dark;
+}
+
+/* ---------- Fiscal ---------- */
+.tabela-cfop td { vertical-align: top; }
+.tabela-cfop td:first-child { white-space: nowrap; }
+
+.tabela-cfop select,
+.tabela-cfop input[type="text"] {
+    width: 100%;
+    min-width: 150px;
+    padding: 7px 9px;
+    font: 500 12.5px 'Poppins', sans-serif;
+    color: var(--tinta);
+    background: var(--superficie-alta);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+}
+
+.tabela-cfop select option { background: var(--superficie-topo); }
+.tabela-cfop input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--acento); }
+.tabela-cfop tr.cfop-bloqueado td { opacity: .55; }
+.rotulo-campo { display: block; font-size: 11px; font-weight: 600; letter-spacing: .04em; color: var(--tinta-media); margin-bottom: 6px; }
+.fiscal-cfop-novo { max-width: 720px; align-items: end; }
+
+/* ---------- Pedido de entrada ---------- */
+.pedido-acoes-topo { display: flex; flex-wrap: wrap; gap: 8px; }
+.pedido-acoes-topo label.botao { cursor: pointer; }
+
+.pedido-linha {
+    display: grid;
+    gap: 10px;
+    padding: 14px 0;
+    border-bottom: 1px dashed var(--borda-forte);
+}
+
+.pedido-linha.sem-tipo { box-shadow: inset 3px 0 0 var(--atencao); padding-left: 12px; }
+.pedido-linha-topo { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: end; }
+
+.pedido-linha-campos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    align-items: end;
+}
+
+.pedido-campo {
+    display: grid;
+    gap: 5px;
+    font-size: 11.5px;
+    color: var(--tinta-fraca);
+}
+
+.pedido-campo.largo { grid-column: span 2; }
+
+.pedido-campo input,
+.pedido-campo select,
+.pedido-campo textarea {
+    width: 100%;
+    padding: 8px 10px;
+    font: 500 13px 'Poppins', sans-serif;
+    color: var(--tinta);
+    background: var(--superficie-alta);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+    color-scheme: dark;
+}
+
+.pedido-campo select option { background: var(--superficie-topo); }
+.pedido-campo input:disabled,
+.pedido-campo select:disabled,
+.pedido-campo textarea:disabled { opacity: .7; }
+.pedido-dica { color: var(--tinta-fraca); font-size: 12px; margin: 0; }
+.pedido-alerta { color: var(--atencao); font-size: 12.5px; }
+.pedido-parcelas { display: grid; gap: 8px; }
+.pedido-parcela { display: grid; grid-template-columns: 90px 1fr 1fr auto; gap: 8px; align-items: end; }
+.pedido-totais .resumo-total strong { font-size: 28px; }
+.pedido-botoes { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.botao-confirmar { background: var(--bom); border-color: var(--bom); }
+
+@media (max-width: 520px) {
+    .pedido-campo.largo { grid-column: 1 / -1; }
+    .pedido-parcela { grid-template-columns: 1fr 1fr; }
+}
+
+/* ==================================================================
+   11. Celular, tablet e computador (v7.1)
+   ------------------------------------------------------------------
+   Medido tela a tela em 360, 390 (celular), 820 e 1180 (tablet em pé e
+   deitado) e 1440 (computador). O que estourava a largura e por quê:
+     - itens de grade (1fr) cresciam até o conteúdo mais largo deles
+       (tabela, filtro) e empurravam a página para o lado: falta de
+       min-width:0;
+     - filtros do cabeçalho dos gráficos não encolhiam;
+     - a trilha de etapas da OS não cabia na janela;
+     - tabelas espremidas no celular e escondendo o botão de editar
+       no tablet: agora viram cartões (responsivo.js marca, aqui desenha).
+   ================================================================== */
+
+/* ---------- grade que não estoura ---------- */
+.secao > *,
+.tables-grid > *,
+.stats-container > *,
+.kpis > *,
+.formulario > *,
+.modal-corpo > *,
+.painel-grafico,
+.table-section {
+    min-width: 0;
+}
+
+.tables-grid      { grid-template-columns: repeat(auto-fit, minmax(min(330px, 100%), 1fr)); }
+.stats-container  { grid-template-columns: repeat(auto-fit, minmax(min(215px, 100%), 1fr)); }
+.kpis             { grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); }
+.formulario,
+.modal-corpo      { grid-template-columns: repeat(auto-fit, minmax(min(215px, 100%), 1fr)); }
+
+/* O bloco dos relatórios do Painel (só para quem vê o financeiro) é um
+   <div> dentro da seção: sem isto, cards e gráficos encostavam um no
+   outro, sem o espaço que o resto da seção tem. O "esconder" do perfil
+   sem financeiro é !important e continua valendo. */
+.secao > div[data-so-financeiro] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+}
+
+.kpi-nota {
+    flex-wrap: wrap;
+}
+
+/* Cabeçalho de gráfico em painel de meia largura (tablet deitado, janela
+   de 1280): os filtros não cabiam ao lado do título e saíam pela borda.
+   Agora descem para a linha de baixo, encostados à direita, só quando
+   não cabem. */
+.grafico-topo {
+    flex-wrap: wrap;
+}
+
+.grafico-topo > div:first-child {
+    flex: 1 1 200px;
+    min-width: 0;
+}
+
+.grafico-topo .filtros-painel,
+.secao-topo > .filtros-painel,
+.table-title .filtros-painel {
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: 100%;
+    margin-left: auto;
+    justify-content: flex-end;
+}
+
+.filtro-grafico {
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* Texto comprido sem espaço (IMEI, chave de 44, e-mail) quebra em vez
+   de alargar o cartão. */
+table.em-cartoes td,
+.lista-dados strong,
+.modal-corpo .dica {
+    overflow-wrap: anywhere;
+}
+
+/* ---------- tabela em cartões ---------- */
+table.em-cartoes,
+table.em-cartoes tbody,
+table.em-cartoes tfoot,
+table.em-cartoes tr,
+table.em-cartoes td {
+    display: block;
+    width: 100%;
+}
+
+table.em-cartoes thead {
+    display: none;
+}
+
+table.em-cartoes tbody,
+table.em-cartoes tfoot {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 10px;
+}
+
+table.em-cartoes tfoot {
+    margin-top: 10px;
+}
+
+table.em-cartoes tr {
+    padding: 6px 14px;
+    background: var(--superficie-alta);
+    border: 1px solid var(--borda);
+    border-radius: var(--raio-p);
+}
+
+table.em-cartoes tbody tr:hover td {
+    background: transparent;
+}
+
+/* Rótulo da coluna à esquerda, valor à direita dele. */
+table.em-cartoes td {
+    position: relative;
+    min-height: 34px;
+    padding: 8px 0 8px 40%;
+    border-bottom: 1px solid var(--grade);
+    text-align: left;
+    white-space: normal;
+}
+
+table.em-cartoes td::before {
+    content: attr(data-rotulo);
+    position: absolute;
+    left: 0;
+    top: 9px;
+    width: calc(40% - 12px);
+    color: var(--tinta-fraca);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    line-height: 1.35;
+}
+
+table.em-cartoes tr td:last-child {
+    border-bottom: none;
+}
+
+/* A primeira coluna (número, item, nome) é o título do cartão. */
+table.em-cartoes td:first-child {
+    padding-left: 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+table.em-cartoes td:first-child::before,
+table.em-cartoes td[data-rotulo=""]::before {
+    display: none;
+}
+
+table.em-cartoes td[data-rotulo=""] {
+    padding-left: 0;
+}
+
+table.em-cartoes td:first-child .observacao,
+table.em-cartoes td:first-child small {
+    font-weight: 400;
+}
+
+/* Linha vazia ("Nenhuma OS") e linha de total ocupam o cartão inteiro. */
+table.em-cartoes .empty-row,
+table.em-cartoes .empty-row td {
+    background: transparent;
+    border: none;
+    text-align: center;
+}
+
+table.em-cartoes .linha-total {
+    background: rgba(255, 255, 255, .06);
+    border-color: var(--borda-forte);
+}
+
+table.em-cartoes .linha-total td {
+    background: transparent;
+    border-top: none;
+}
+
+/* Botões do registro: embaixo, à direita, com tamanho de dedo. */
+table.em-cartoes td.coluna-acoes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-left: 0;
+    white-space: normal;
+}
+
+table.em-cartoes td.coluna-acoes::before {
+    display: none;
+}
+
+table.em-cartoes td.coluna-acoes .botao-icone + .botao-icone {
+    margin-left: 0;
+}
+
+table.em-cartoes td.coluna-acoes .botao-icone,
+table.em-cartoes td.coluna-acoes .botao {
+    min-height: 38px;
+    min-width: 44px;
+}
+
+/* Campo dentro do cartão (regras do Admin, CFOP do Fiscal): rótulo em
+   cima e o campo na largura toda - ao lado do rótulo, o select cortava
+   o texto ("Gera conta a pag..."). Caixa de marcar fica ao lado. */
+table.em-cartoes td input,
+table.em-cartoes td select {
+    width: 100%;
+    max-width: 100%;
+}
+
+table.em-cartoes td input[type="checkbox"],
+table.em-cartoes td input[type="radio"] {
+    width: auto;
+}
+
+table.em-cartoes td:not(:first-child):has(> select, > textarea, > input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"])) {
+    padding: 28px 0 10px;
+}
+
+table.em-cartoes td:not(:first-child):has(> select, > textarea, > input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]))::before {
+    top: 9px;
+    width: 100%;
+}
+
+/* Em cartão, a tabela não precisa mais rolar de lado. */
+.rolagem-x:has(> table.em-cartoes) {
+    overflow-x: visible;
+}
+
+/* ---------- tablet em pé e celular (menu escondido) ---------- */
+@media (max-width: 860px) {
+    /* O título vem logo depois do botão de menu, não lá no meio. */
+    .topbar {
+        justify-content: flex-start;
+        gap: 14px;
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+
+    .topbar > div {
+        min-width: 0;
+    }
+
+    .topbar-titulo {
+        font-size: 17px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .topbar-sub {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .abrir-menu {
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+        width: 42px;
+        height: 42px;
+        padding: 0;
+    }
+
+    /* Menu aberto por cima: rola sozinho se a tela for baixa. */
+    .sidebar {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        max-width: 86vw;
+    }
+
+    /* Cards de número dois por linha (a regra geral acima daria um só). */
+    .stats-container,
+    .kpis {
+        grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
+    }
+
+    /* PDV: a coluna única não pode ser mais larga que a tela. */
+    .pdv-corpo {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+/* ---------- celular ---------- */
+@media (max-width: 640px) {
+    main {
+        padding-top: 18px;
+    }
+
+    .secao {
+        gap: 14px;
+    }
+
+    .table-section,
+    .painel-grafico {
+        padding: 14px;
+    }
+
+    .rolagem-x {
+        margin: 0 -14px -14px;
+        padding: 0 14px 14px;
+    }
+
+    .barra-filtros > * {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+
+    .barra-filtros input {
+        min-width: 0;
+    }
+
+    .sub-abas {
+        width: 100%;
+    }
+
+    .sub-aba {
+        flex: 1 1 auto;
+        text-align: center;
+    }
+
+    .table-title {
+        font-size: 13.5px;
+    }
+
+    /* Valor do card acompanha a largura: "R$ 72.424,00" cabe em meia tela de 360. */
+    .stat-box,
+    .kpi {
+        padding: 14px;
+    }
+
+    .stat-value,
+    .kpi-valor {
+        font-size: clamp(16px, 5vw, 22px);
+    }
+
+    /* Filtros do relatório numa linha só, divididos por igual. */
+    .secao-topo > .filtros-painel,
+    .grafico-topo .filtros-painel {
+        flex-basis: 100%;
+        flex-wrap: nowrap;
+    }
+
+    .secao-topo > .filtros-painel .filtro-grafico,
+    .grafico-topo .filtros-painel .filtro-grafico {
+        flex: 1 1 0;
+    }
+
+    /* Janela vira folha de tela inteira: mais espaço para o formulário
+       e os botões sempre no pé, ao alcance do polegar. */
+    .modal-fundo {
+        padding: 0;
+        align-items: stretch;
+    }
+
+    .modal-caixa {
+        max-width: none;
+        max-height: none;
+        height: 100%;
+        height: 100dvh;
+        border: none;
+        border-radius: 0;
+    }
+
+    .modal-topo {
+        padding: 12px 16px;
+    }
+
+    .modal-fechar {
+        width: 42px;
+        height: 42px;
+    }
+
+    .modal-corpo {
+        padding: 16px;
+        gap: 13px;
+    }
+
+    .modal-rodape {
+        flex-wrap: wrap;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    }
+
+    .modal-rodape .botao {
+        flex: 1 1 0;
+        justify-content: center;
+        min-height: 44px;
+    }
+
+    .modal-aviso {
+        flex-basis: 100%;
+        margin-right: 0;
+    }
+
+    /* Trilha da OS: só a etapa atual mostra o nome; as outras ficam na
+       bolinha numerada. Com os seis nomes, eles se sobrepunham. */
+    .trilha {
+        align-items: flex-start;
+    }
+
+    .passo-nome {
+        display: none;
+    }
+
+    .passo.agora .passo-nome {
+        display: block;
+    }
+
+    .passo-linha {
+        margin-top: 13px;
+    }
+
+    .painel-os {
+        padding: 14px;
+    }
+
+    /* PDV */
+    .pdv-cliente-linha {
+        grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .pdv-topo .pdv-operador {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+/* PDV em tela de uma coluna: o botão de finalizar com o total fica
+   preso no pé da tela enquanto a pessoa rola o carrinho. */
+@media (max-width: 980px) {
+    .pdv-acoes {
+        position: sticky;
+        bottom: 0;
+        z-index: 5;
+        margin: 0 -22px -20px;
+        padding: 12px 22px calc(12px + env(safe-area-inset-bottom));
+        background: var(--superficie);
+        border-top: 1px solid var(--borda);
+        box-shadow: 0 -10px 24px rgba(0, 0, 0, .35);
+    }
+}
+
+@media (max-width: 520px) {
+    .pdv-acoes {
+        margin: 0 -16px -16px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    /* Cancelar ao lado (e não embaixo): a barra presa no pé come menos tela. */
+    .pdv-acoes {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 8px;
+    }
+
+    .pdv-acoes .botao {
+        justify-content: center;
+        padding-left: 12px;
+        padding-right: 12px;
+        white-space: normal;
+        max-width: 110px;
+        text-align: center;
+        line-height: 1.2;
+    }
+
+    .pdv-finalizar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+        padding: 10px 14px;
+        font-size: 13px;
+    }
+
+    .pdv-finalizar strong {
+        margin-left: 0;
+        font-size: 21px;
+    }
+}
+
+/* Sem teclado físico, a dica de atalho só ocupa espaço. */
+@media (pointer: coarse) {
+    .pdv-finalizar kbd,
+    .pdv-teclas {
+        display: none;
+    }
+}
+
+/* ---------- toque (celular e tablet) ----------
+   Dedo precisa de alvo maior que o ponteiro do mouse, e o iPhone dá zoom
+   na página se o campo tiver letra menor que 16px. */
+@media (pointer: coarse) {
+    input,
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
+
+    .botao,
+    .sub-aba,
+    .pdv-filtro,
+    .pdv-forma {
+        min-height: 42px;
+    }
+
+    .botao-icone,
+    .botao-pequeno {
+        min-height: 38px;
+        min-width: 38px;
+    }
+
+    .filtro-grafico {
+        min-height: 38px;
+    }
+
+    .menu a,
+    .menu-grupo-botao {
+        padding-top: 13px;
+        padding-bottom: 13px;
+    }
+
+    /* Sem mouse, "levantar" o card no hover só deixa ele torto depois do toque. */
+    .stat-box:hover,
+    .kpi:hover,
+    .botao:hover {
+        transform: none;
+    }
+}
+
+/* ==================================================================
+   12. Loja online (v8)
+   ================================================================== */
+.loja-faixa {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+    margin-bottom: 14px;
+}
+.loja-filtros { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+.loja-filtros small { opacity: .7; margin-left: 2px; }
+.loja-anuncios { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 14px; }
+.loja-anuncio {
+    display: grid; grid-template-columns: 88px minmax(0, 1fr); grid-template-areas: "foto corpo" "acoes acoes"; gap: 10px 14px;
+    padding: 14px; border: 1px solid var(--borda); border-radius: var(--raio-p); background: var(--superficie-alta); min-width: 0;
+}
+.loja-anuncio.fora { opacity: .72; }
+.loja-anuncio-foto { grid-area: foto; width: 88px; height: 88px; border-radius: var(--raio-p); overflow: hidden; background: var(--fundo);
+                     display: flex; align-items: center; justify-content: center; color: var(--tinta-fraca); font-size: 12px; }
+.loja-anuncio-foto img { width: 100%; height: 100%; object-fit: cover; }
+.loja-anuncio-corpo { grid-area: corpo; display: flex; flex-direction: column; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.loja-anuncio-preco { font-weight: 600; }
+.loja-anuncio-acoes { grid-area: acoes; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; align-items: center; align-self: end; }
+.botao-perigo { color: var(--critico); }
+.botao.botao-perigo { background: var(--critico); color: #fff; margin-top: 10px; }
+
+.loja-detalhe p { margin: 0 0 10px; }
+.loja-detalhe-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 4px 18px; overflow-wrap: anywhere; }
+.loja-trilha { list-style: none; margin: 0 0 10px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(110px, 100%), 1fr)); gap: 6px; }
+.loja-trilha li { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border-radius: var(--raio-p); background: var(--superficie-alta);
+                  color: var(--tinta-fraca); font-size: 13px; border-top: 3px solid var(--borda-forte); }
+.loja-trilha li.feito { color: var(--tinta); border-top-color: var(--acento); }
+.loja-trilha li.atual { background: var(--acento-fundo); font-weight: 600; }
+.loja-trilha small { font-weight: 400; color: var(--tinta-fraca); }
+.loja-eventos { margin-bottom: 6px; }
+.loja-eventos summary { cursor: pointer; color: var(--tinta-media); min-height: 32px; }
+.loja-eventos ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; font-size: 13px; }
+.loja-aviso-pagamento { margin: 0; padding: 10px 12px; border-radius: var(--raio-p); background: rgba(250, 178, 25, .12); border: 1px solid rgba(250, 178, 25, .35); }
+.loja-cancelar { padding: 10px 12px; border: 1px solid rgba(208, 59, 59, .35); border-radius: var(--raio-p); }
+.loja-cancelar summary { cursor: pointer; color: var(--critico); font-weight: 600; min-height: 32px; }
+.loja-cancelar label { display: block; margin: 8px 0 4px; font-size: 13px; color: var(--tinta-media); }
+.loja-cancelar input { width: 100%; }
+
+.loja-fotos { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 8px; }
+.loja-foto { margin: 0; width: 104px; display: flex; flex-direction: column; gap: 4px; }
+.loja-foto img { width: 104px; height: 104px; object-fit: cover; border-radius: var(--raio-p); background: var(--fundo); }
+.loja-escolher-foto { cursor: pointer; align-self: flex-start; }
+.loja-filtro {
+    min-height: 36px; padding: 0 12px; border-radius: var(--raio-pill); border: 1px solid var(--borda-forte);
+    background: transparent; color: var(--tinta-media); font: inherit; font-size: 13px; cursor: pointer;
+}
+.loja-filtro:hover { color: var(--tinta); background: var(--superficie-alta); }
+.loja-filtro.ativo { background: var(--acento-fundo); border-color: var(--acento-borda); color: var(--acento-claro); font-weight: 600; }
+
+/* ==================================================================
+   13. Tela de entrada do PDV (v8)
+   Barra do balcao (saudacao + Nova venda / Nova OS), o dia numa faixa,
+   e embaixo atalhos em lista ao lado da fila de OS. Celular: tudo em
+   uma coluna, as duas acoes lado a lado.
+   ================================================================== */
+.pdvi { display: grid; gap: 16px; }
+.pdvi > * { min-width: 0; }
+
+.pdvi-balcao {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px;
+    padding: 20px 22px;
+    border-radius: var(--raio);
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    border-left: 4px solid var(--acento);
+    box-shadow: var(--sombra);
+}
+.pdvi-balcao-texto { min-width: 0; }
+.pdvi-balcao-sub { color: var(--tinta-fraca); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+.pdvi-balcao-titulo { margin: 4px 0 0; font-size: clamp(20px, 2.2vw, 26px); font-weight: 600; overflow-wrap: anywhere; }
+
+.pdvi-acoes { display: flex; flex-wrap: wrap; gap: 10px; }
+.pdvi-nova-venda, .pdvi-nova-os {
+    display: inline-flex; align-items: center; gap: 12px;
+    min-height: 56px; padding: 10px 20px 10px 12px;
+    border-radius: var(--raio-p);
+    font: inherit; text-align: left; cursor: pointer;
+    transition: transform var(--rapido), background var(--rapido), border-color var(--rapido);
+}
+.pdvi-nova-venda { border: 0; background: var(--acento); color: #fff; box-shadow: 0 6px 18px color-mix(in srgb, var(--acento) 35%, transparent); }
+.pdvi-nova-venda:hover { background: var(--acento-claro); transform: translateY(-1px); }
+.pdvi-nova-os { border: 1px solid var(--borda-forte); background: var(--superficie-alta); color: var(--tinta); }
+.pdvi-nova-os:hover { border-color: var(--acento-borda); transform: translateY(-1px); }
+.pdvi-acao-icone { width: 36px; height: 36px; flex: none; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+                   background: rgba(255, 255, 255, .16); }
+.pdvi-nova-os .pdvi-acao-icone { background: var(--acento-fundo); color: var(--acento-claro); }
+.pdvi-acao-icone svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.pdvi-acao-textos { display: flex; flex-direction: column; }
+.pdvi-acao-nome { font-weight: 600; font-size: 15px; }
+.pdvi-acao-dica { font-size: 12px; opacity: .8; }
+.pdvi-nova-venda kbd { background: rgba(255, 255, 255, .2); border: 1px solid rgba(255, 255, 255, .35); color: #fff; }
+
+/* O dia: uma faixa so, com o rotulo "Hoje" na ponta. */
+.pdvi-dia {
+    display: flex;
+    flex-wrap: wrap;
+    border-radius: var(--raio);
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    overflow: hidden;
+}
+.pdvi-dia-rotulo {
+    display: flex; flex-direction: column; justify-content: center; gap: 2px;
+    padding: 12px 18px; font-weight: 600;
+    background: var(--acento-fundo); color: var(--acento-claro);
+}
+.pdvi-dia-rotulo small { font-weight: 400; font-size: 12px; color: var(--tinta-media); }
+.pdvi-numero {
+    flex: 1 1 130px;
+    display: flex; flex-direction: column; justify-content: center; gap: 2px;
+    padding: 12px 16px; min-height: 64px;
+    border: 0; border-left: 1px solid var(--borda); background: transparent;
+    color: var(--tinta); font: inherit; text-align: left; cursor: pointer;
+}
+.pdvi-numero:hover { background: var(--superficie-alta); }
+.pdvi-numero strong { font-size: 18px; font-weight: 600; overflow-wrap: anywhere; }
+.pdvi-numero span { font-size: 12px; color: var(--tinta-media); }
+.pdvi-numero-alerta strong { color: var(--atencao); }
+.pdvi-numero-alerta { box-shadow: inset 0 -3px 0 var(--atencao); }
+
+.pdvi-corpo { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.pdvi-atalhos, .pdvi-os {
+    padding: 16px;
+    border-radius: var(--raio);
+    background: var(--superficie);
+    border: 1px solid var(--borda);
+    box-shadow: var(--sombra);
+}
+.pdvi-bloco-titulo {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--tinta-media); letter-spacing: .03em;
+}
+.botao-texto-link { border: 0; background: none; color: var(--acento-claro); font: inherit; font-size: 13px; cursor: pointer; min-height: 32px; padding: 0 4px; }
+.botao-texto-link:hover { text-decoration: underline; }
+
+.pdvi-atalhos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.pdvi-atalhos .pdvi-bloco-titulo { grid-column: 1 / -1; }
+.pdvi-atalho {
+    display: flex; align-items: center; gap: 12px;
+    min-height: 56px; padding: 10px 12px;
+    border: 1px solid transparent; border-radius: var(--raio-p);
+    background: transparent; color: var(--tinta); font: inherit; text-align: left; cursor: pointer;
+    transition: background var(--rapido), border-color var(--rapido);
+}
+.pdvi-atalho:hover { background: var(--superficie-alta); border-color: var(--borda); }
+.pdvi-atalho-icone { width: 36px; height: 36px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                     background: var(--acento-fundo); color: var(--acento-claro); }
+.pdvi-atalho-icone svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.pdvi-atalho-textos { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.pdvi-atalho-nome { font-weight: 600; font-size: 14px; }
+.pdvi-atalho-texto { font-size: 12px; color: var(--tinta-fraca); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pdvi-selo { flex: none; padding: 1px 8px; border-radius: var(--raio-pill); font-size: 11px; font-weight: 600;
+             background: color-mix(in srgb, var(--atencao) 20%, transparent); color: var(--atencao); }
+
+.pdvi-fila { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.pdvi-os-item {
+    display: grid; gap: 4px;
+    padding: 10px 12px;
+    border-radius: var(--raio-p);
+    background: var(--superficie-alta);
+    border-left: 3px solid var(--borda-forte);
+}
+.pdvi-os-cabeca { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pdvi-os-quem { font-size: 13px; color: var(--tinta-media); overflow-wrap: anywhere; }
+.pdvi-os-pe { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--tinta-fraca); }
+.pdvi-os-pe strong { margin-left: auto; color: var(--tinta); font-size: 14px; }
+
+@media (max-width: 980px) {
+    .pdvi-corpo { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+    .pdvi { gap: 12px; }
+    .pdvi-balcao { padding: 16px; }
+    .pdvi-acoes { width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+    .pdvi-nova-venda, .pdvi-nova-os { padding: 10px 12px; }
+    .pdvi-acao-dica { display: none; }
+    .pdvi-numero { flex-basis: 40%; }
+    .pdvi-dia-rotulo { flex-basis: 100%; flex-direction: row; align-items: baseline; gap: 8px; padding: 10px 16px; }
+    .pdvi-numero { border-left: 0; border-top: 1px solid var(--borda); }
+    .pdvi-numero:nth-of-type(even) { border-left: 1px solid var(--borda); }
+    .pdvi-atalhos { grid-template-columns: minmax(0, 1fr); }
+}
+@media (pointer: coarse) {
+    .pdvi-nova-venda:hover, .pdvi-nova-os:hover { transform: none; }
+}

@@ -1,0 +1,1127 @@
+========================================================
+ INDEX CELULARES - Sistema de Assistência Técnica
+ Versão 2 - entradas, vendas, cadastros e financeiro
+========================================================
+
+ENTRAR NO SISTEMA
+-----------------
+
+O administrador recebe a senha inicial na instalação e é obrigado
+a trocá-la no primeiro acesso.
+
+Nenhuma senha da loja fica escrita neste arquivo nem em outro lugar do
+projeto. A regra da senha é uma só (troca obrigatória, Minha conta
+e cadastro de usuário): pelo menos 8 caracteres, com letras E
+números; não pode conter o login, nem ser uma senha comum ("admin",
+"senha123", "12345678"...), nem uma repetição ("senhasenha",
+"12121212"). Quem entra com uma senha que não segue a regra é
+obrigado a trocar antes de usar o sistema.
+
+A única exceção é o banco de HOMOLOGAÇÃO (de teste): ali entra o
+acesso rápido  p / p  (admin), sem trocar. Ele só existe num banco
+preparado pelo  php dados\homologacao.php  (veja HOMOLOGAÇÃO, mais
+abaixo) e só funciona com a regra "Este banco é de teste" ligada; na
+loja ela fica desligada.
+
+Usuário criado pelo admin, ou com a senha redefinida pelo admin,
+também troca no primeiro acesso: o admin não fica sabendo a senha de
+ninguém. Esqueceu a senha? Um admin cadastra uma nova (provisória) em
+Administrativo > Minha conta.
+
+
+COMO ABRIR
+----------
+
+Dê dois cliques em  iniciar-servidor.bat
+O navegador abre sozinho em http://localhost:5500
+Para encerrar, feche a janela preta ou pressione Ctrl+C.
+
+ATENÇÃO - MUDOU NA VERSÃO 2: o sistema roda SÓ COM PHP. A versão
+em Node foi retirada do projeto (ver "Onde foi parar o Node", no
+fim deste arquivo). Nesta máquina não muda nada: o PHP 8.3.33 já
+está em C:\php e sempre foi o motor usado.
+
+    PHP  8.3.33  em  C:\php     (é o motor do sistema)
+
+O arquivo C:\php\php.ini já vem com o que o sistema precisa:
+
+    extension=pdo_sqlite     conversa com o banco
+    extension=sqlite3
+    extension=mbstring       acentos nos nomes e observações
+    date.timezone = America/Sao_Paulo    datas no horário daqui
+
+Para rodar na mão, dentro desta pasta:
+
+    php -S localhost:5500 servidor.php
+
+IMPORTANTE: o login é conferido no banco de dados, então o
+sistema PRECISA do servidor. Abrir o Login\index.html direto pelo
+arquivo (dois cliques) mostra a tela, mas não entra.
+
+
+COMO O SISTEMA ESTÁ ORGANIZADO
+------------------------------
+
+A ideia por trás das telas é separar três coisas que antes
+estavam misturadas numa tabela só:
+
+  CADASTRO   o que existe no mundo, sem quantidade.
+             Cliente, fornecedor, modelo de celular, peça,
+             produto. Cadastra uma vez, usa para sempre.
+
+  MOVIMENTO  o que entrou e o que saiu, com quantidade.
+             Entrada (compra), venda e ordem de serviço.
+
+  FINANCEIRO o dinheiro. Toda venda e toda OS entregue viram
+             lançamento; e você pode lançar na mão o que não
+             passa por nenhuma das duas (aluguel, energia).
+
+Regra que vale em todas as telas: campo que aponta para outro
+cadastro é SEMPRE uma lista para escolher, nunca um campo de
+digitar. Antes, digitar "Joao" e depois "João" criava dois
+clientes. A única exceção é o modelo do celular na OS - e mesmo
+esse vira cadastro de verdade na hora, aparecendo na lista da
+próxima vez.
+
+
+O QUE DÁ PARA FAZER
+-------------------
+
+Login          senha conferida no banco; erra a senha, não entra.
+               Sessão de 8 horas, contadas do login (passou disso,
+               o sistema pede para entrar de novo) e botão Sair.
+
+               5 tentativas erradas seguidas no MESMO LOGIN travam
+               esse login (só ele) por 15 minutos. A partir do 3º
+               erro a tela avisa quantas tentativas restam. Os
+               outros usuários continuam entrando - um funcionário
+               com Caps Lock não tranca mais a loja.
+               (Computador de FORA desta máquina que erra 30 vezes,
+               em qualquer login, também é travado.)
+               O admin destrava na hora em Minha conta > Usuários
+               (botão Destravar); a lista mostra até quando cada
+               login está bloqueado.
+
+               Perfis: o admin faz tudo. Técnico e balcão não
+               veem Financeiro, Relatórios, Lançamentos nem
+               Usuários; não veem custo nem lucro no painel, nas
+               vendas e nas OS (o custo aparece só no Estoque e
+               nas Entradas, que eles lançam); não excluem nada; e não
+               estornam dinheiro: cancelar uma venda já recebida,
+               ou tirar de "entregue" uma OS já paga, é só do
+               admin. Escolher a forma de pagamento PADRÃO da
+               loja também é só do admin.
+
+Dashboard      tem duas partes.
+
+               RESULTADO DOS ÚLTIMOS 12 MESES - os relatórios,
+               montados a partir das vendas, das OS entregues e
+               dos lançamentos do financeiro:
+
+                 4 números do período: receita, custo dos itens,
+                   despesas e lucro líquido (com margem, ticket
+                   médio e a variação contra o mês anterior)
+                 Receita x custo x despesas, mês a mês
+                 Lucro líquido por mês (verde no positivo,
+                   vermelho no negativo)
+                 Margem líquida - quanto sobra de cada R$ 100
+                 Caixa: entrou e saiu (só o que foi baixado)
+                 De onde vem a receita: balcão x oficina
+                 Como o cliente pagou (rosca, com filtros)
+                 Para onde vai o dinheiro (rosca)
+                 Dinheiro parado por tipo (rosca)
+                 O que mais dá dinheiro (ranking por item)
+                 Contas dos próximos 30 dias
+                 Resultado mês a mês, em tabela
+
+               Passe o mouse em qualquer gráfico para ver os
+               valores daquele mês.
+
+               FILTROS - cada relatório tem o seu, no canto do
+               painel, e eles são INDEPENDENTES: dá para deixar a
+               receita em 12 meses e o ranking em 3 ao mesmo
+               tempo. Filtro fora do padrão fica marcado em azul,
+               para ninguém ler um gráfico de 3 meses achando que
+               está vendo o ano inteiro.
+
+                 Os 4 números do   3, 6, 12 meses OU datas
+                 topo              escolhidas a dedo
+                 Cada gráfico      idem, e independente do topo
+                 O que mais dá     período/datas + tipo de item
+                 dinheiro          (celular/peça/produto) +
+                                   ordenar por faturamento,
+                                   lucro ou quantidade
+                 Contas a vencer   7, 15, 30, 60 ou 90 dias +
+                                   receber/pagar
+
+               FILTRO DE ORIGEM - cada relatório também filtra de
+               onde veio o dinheiro: vendas e OS (padrão), só
+               vendas de balcão, ou só ordens de serviço. É como
+               se enxerga o lucro da oficina separado do balcão.
+
+               Filtrando por origem, as despesas saem da conta
+               (aluguel não é de venda nem de OS), e o card passa
+               a dizer "Lucro bruto" em vez de "Lucro líquido".
+
+               ESCOLHENDO DATAS - em "Escolher datas…" aparecem
+               dois campos (de / até) ao lado do filtro. Cada
+               relatório tem o seu par, independente dos outros.
+
+               O gráfico muda de granularidade sozinho, conforme o
+               tamanho do intervalo:
+
+                 até 45 dias    uma coluna por DIA
+                 até 180 dias   uma coluna por SEMANA
+                 acima disso    uma coluna por MÊS
+
+               O título acompanha ("Receita, custo e despesas por
+               dia") e a tabela do fim também. Assim dá para olhar
+               a semana passada dia a dia num painel e o ano
+               inteiro mês a mês no painel do lado.
+
+               Se as datas forem invertidas, o sistema arrasta a
+               outra ponta em vez de reclamar.
+
+               Os filtros trabalham sobre os dados já carregados,
+               sem voltar ao servidor: a troca é instantânea. O
+               painel recebe a série DIÁRIA de uma vez (uns 30 KB)
+               e agrupa no navegador. Conta vencida aparece em
+               qualquer prazo escolhido - é justamente o que não
+               pode sumir por causa de um filtro.
+
+               COMO O LUCRO LÍQUIDO É CALCULADO
+
+                 receita        vendas + OS entregues
+                 - custo        o que a loja pagou nos itens
+                 = lucro bruto
+                 - despesas     contas a pagar lançadas na mão
+                 = lucro líquido
+
+               A compra de estoque NÃO entra como despesa: ela já
+               aparece no custo quando o item é vendido. Somar as
+               duas descontaria o mesmo dinheiro duas vezes, e o
+               mês de uma compra grande ficaria no vermelho mesmo
+               com a loja vendendo bem.
+
+               ESTOQUE E OFICINA HOJE - a situação de agora: cards
+               do estoque, próximo celular em processamento,
+               resumo das OS e uma tabela "Precisa repor" com as
+               peças e produtos com saldo 3 ou menos.
+
+               Os quatro cards e as três tabelas do fim são dos
+               CELULARES (peça e produto têm a tabela "Precisa
+               repor"). Os números vêm prontos do servidor; a tela
+               não refaz a conta.
+
+               MENU RETRÁTIL - a setinha ao lado do logo
+               encolhe o menu para uma faixa de ícones, dando mais
+               espaço às tabelas. A escolha fica gravada no
+               navegador: você decide uma vez, não toda vez que
+               abre o sistema.
+
+               MENU EM GRUPOS (versão 9) - soltos ficam Início, PDV
+               e Ordens de Serviço; o resto mora em grupos que abrem
+               e fecham, e o grupo da tela aberta abre sozinho:
+                 Compras e estoque  Entradas, Estoque
+                 Vendas             Histórico de vendas, Loja online
+                 Gestão             Painel, Financeiro
+                 Administrativo     Cadastros, Fiscal, Empresa e
+                                    regras (o antigo "Admin"),
+                                    Minha conta (a antiga
+                                    "Configurações")
+
+               JANELA DE CADASTRO - clicar fora NÃO fecha mais. A
+               janela treme e avisa. Para sair, use Cancelar ou o
+               × do canto. Antes, um clique errado no meio de uma
+               entrada jogava fora tudo o que já tinha sido
+               digitado, sem desfazer.
+
+Entradas       (versão 9: a ÚNICA porta do estoque) tudo que chega
+               na loja entra por um documento: o XML da NF-e do
+               fornecedor ("Importar XML da NF-e") ou a compra
+               digitada ("+ Nova entrada", que já abre com uma
+               linha - a peça do dia, o usado comprado no balcão,
+               com a natureza "Compra de celular usado de pessoa
+               física" e a pessoa cadastrada como fornecedor).
+               Cada linha diz o que é (celular, peça, produto) e
+               qual item do catálogo. Confirmar põe no estoque e
+               pergunta o pagamento: "Já paguei" (a conta nasce
+               paga) ou "Fica a pagar" (vencimento ou parcelas).
+               Quem confirma é o admin; balcão e técnico montam o
+               rascunho, e confirmam também se a regra "Balcão e
+               técnico podem confirmar a entrada" estiver ligada
+               (Empresa e regras > Regras).
+
+Estoque        (antes "Entradas") o que está na loja, item por
+               item, com o saldo. Não lança entrada: o "+ Nova
+               entrada" leva para a tela Entradas. Cada item mostra
+               de onde veio - "Entrada PE-..." (clique e abre o
+               documento) ou "lançamento avulso" (o que foi lançado
+               antes da versão 9). Do documento, quantidade e custo
+               seguem a nota (para corrigir, cancele a Entrada); o
+               resto (preço de venda, situação, cor) se edita aqui.
+
+               Os itens são de três tipos, cada um com seus
+               próprios campos:
+
+                 Celular  modelo (do catálogo), IMEI, cor e
+                          condição. Sempre 1 unidade.
+
+               UM APARELHO, UMA UNIDADE: a loja pode recomprar o
+               celular que vendeu (entrada nova, mesmo IMEI). Depois
+               disso, cancelar ou excluir a venda antiga - ou tirar
+               de "entregue" a OS que vendeu o aparelho - é recusado
+               com a data da recompra: o mesmo aparelho viraria duas
+               unidades à venda. Cancele ou ajuste a entrada da
+               recompra antes.
+                 Peça     peça (do catálogo), quantidade.
+                 Produto  produto (do catálogo), quantidade.
+
+               Custo e preço de venda são POR UNIDADE. A conta do
+               fornecedor nasce na confirmação da Entrada.
+
+               O SALDO não é digitado: é calculado (o que entrou
+               menos o que foi vendido menos o que foi usado em
+               OS). Por isso ele nunca desencontra.
+
+               Filtros: busca livre, tipo, situação e um intervalo
+               de datas - para responder "o que eu comprei em tal
+               semana".
+
+Ordens         cliente escolhido na lista de clientes; modelo do
+de Serviço     celular escolhido no catálogo (ou cadastrado na
+               hora); peças e produtos escolhidos no estoque, com
+               baixa automática do saldo.
+
+               O valor das peças é somado dos itens lançados, não
+               digitado. O número (OS-2026-0001) é gerado
+               automaticamente.
+
+               Entregar a OS gera a venda dela e a conta a receber,
+               uma vez só. OS entregue com valor final R$ 0,00
+               (garantia, cortesia) NÃO gera venda: as peças saem
+               pela própria OS. Cancelar ou recusar devolve as
+               peças ao estoque e cancela a conta. Cancelada é
+               definitivo (abra uma OS nova).
+
+               A SENHA DE DESBLOQUEIO do aparelho só aparece na OS
+               aberta, e é apagada quando a OS é entregue,
+               cancelada ou recusada (fica uma nota no histórico).
+
+               Se outra pessoa salvou a mesma OS depois que você a
+               abriu, nada é gravado: a janela avisa e o botão
+               Recarregar traz a versão nova para você conferir.
+
+               ORDEM DE SERVIÇO - o topo da janela mostra uma
+               trilha com as seis etapas do conserto (aberta,
+               orçamento, aprovada, em reparo, pronta, entregue),
+               o estado atual em destaque e os números da OS.
+
+               AS CONTAS SE FAZEM SOZINHAS - a mesma regra na tela e
+               no servidor (testes\casos\mao-de-obra.json confere os
+               dois lados):
+
+                 mão de obra = a soma dos serviços lançados;
+                               sem serviço, o valor digitado;
+                               sem nada digitado, orçamento - peças
+                               (nunca negativo)
+                 valor final = o valor digitado; senão peças + mão
+                               de obra; e se isso der zero, o
+                               orçamento
+
+               "Digitado" é o que você escreveu no campo, ou o que já
+               estava gravado: abrir uma OS e salvar sem mexer nos
+               valores nunca muda a cobrança (o desconto de balcão -
+               final 250 sobre orçamento 300 - continua 250). Se as
+               peças passarem do orçamento, aparece um alerta - quase
+               sempre é um dígito a mais.
+
+               PEÇAS TRAVAM QUANDO A OS FICA PRONTA. Depois de
+               pronta ou entregue, a lista de peças vira só
+               leitura: elas já saíram do estoque e podem já ter
+               virado conta a receber. Para mexer, volte o status
+               para Em reparo, salve, e edite de novo.
+
+               GARANTIA é uma chave sim/não mais o período (30,
+               60, 90 dias, 6 meses ou 1 ano). Antes era um campo
+               numérico solto, e a setinha do teclado transformava
+               90 dias em 89,98.
+
+Vendas         escolhe o cliente (ou deixa "consumidor"), põe os
+               itens que têm saldo, desconto, forma de pagamento
+               e parcelas. Ao fechar:
+                 - o saldo dos itens baixa
+                 - celular vendido sai da prateleira
+                 - o financeiro abre uma conta a receber por
+                   parcela, de mês em mês
+               O histórico mostra faturamento, custo e lucro de
+               cada venda. Excluir a venda devolve tudo ao
+               estoque; cancelar faz o mesmo e mantém o registro.
+
+               CANCELADA É DEFINITIVO: venda cancelada não volta
+               a "concluída" (o celular pode já ter sido vendido
+               de novo). Registre uma venda nova.
+
+               Cancelar ou excluir uma venda já recebida cancela
+               também a conta recebida (estorno): ela continua no
+               histórico como "cancelado", nunca é apagada.
+
+               Mudar o desconto ou a forma de pagamento refaz as
+               parcelas a receber - se nenhuma foi paga ainda. Com
+               parcela paga, o sistema recusa e explica o caminho.
+
+               Venda gerada por uma OS só muda pela OS.
+
+               QUANDO A OS É ENTREGUE, ELA VIRA UMA VENDA
+
+               A peça volta para a prateleira e sai de novo pela
+               venda. O saldo final é o mesmo; o que muda é que a
+               saída passa a ter um documento de venda com
+               cliente, valor e forma de pagamento.
+
+               A venda gerada leva as peças da OS mais a mão de
+               obra (como item de serviço), e o total dela bate
+               com o valor final da ordem. A conta a receber passa
+               a vir da venda.
+
+               Reabrir a OS (tirar de "entregue") desfaz a venda:
+               a peça volta a ficar presa na ordem. Conta já paga
+               não é apagada, é cancelada.
+
+               O faturamento da oficina passa a aparecer como
+               venda nos relatórios - e não é contado duas vezes.
+
+               ONDE A PEÇA FICA DEPOIS DE USADA NUMA OS
+
+               A peça sai da prateleira no momento em que entra
+               na ordem, e fica gravada DENTRO dela - com o preço
+               cobrado e o custo congelados naquela linha, para o
+               histórico não mudar se o catálogo mudar depois.
+
+               Enquanto a OS não é entregue, essa peça não está no
+               saldo nem virou receita. Para ela não sumir do
+               painel sem explicação, existe a tabela "Dentro de
+               OS abertas", no fim do Dashboard, e o card
+               "Dentro de OS" na ficha do item.
+
+               Cancelar ou recusar a OS devolve a peça ao estoque
+               sozinho. Entregar torna a saída definitiva.
+
+               MOVIMENTAÇÃO DE ESTOQUE (devolução, garantia,
+               defeito, perda, ajuste)
+
+               Compra, venda e OS já mexem no estoque sozinhas.
+               Para o resto do que acontece de verdade numa
+               assistência, existe o botão "Movimentar estoque"
+               em Cadastros - e o botão "Garantia" na linha de
+               cada OS, que já vem com a ordem preenchida.
+
+                 Reposição em garantia   entra (fornecedor repôs)
+                 Retorno ao estoque      entra (peça voltou)
+                 Devolvido ao fornecedor sai
+                 Baixa por defeito       sai
+                 Perda                   sai
+                 Brinde / cortesia       sai (brinde ao cliente)
+                 Ajuste de estoque       os dois lados
+
+               Os nomes vêm do servidor (/api/config), iguais na
+               tela e na ficha do item. Venda de R$ 0,00 é recusada:
+               brinde sai por aqui, com o motivo certo.
+
+               O motivo escolhe o lado sozinho: quem preenche
+               pensa no que aconteceu, não em "isso é entrada ou
+               saída?". Baixa maior que o saldo é recusada - saldo
+               negativo não é número, é erro que ninguém explica
+               depois.
+
+               Nada aqui apaga o passado: a peça que saiu numa OS
+               continua registrada nela. O movimento é um
+               lançamento novo, e o saldo é a soma de todos.
+
+               FICHA DO ITEM - em Cadastros > Peças (ou Modelos,
+               ou Produtos), o botão "Movimentação" abre a ficha
+               daquele item: saldo atual, total que entrou, total
+               que saiu e a linha do tempo com TUDO - compra,
+               venda, OS e movimentação - cada linha mostrando o
+               saldo depois dela. É onde se responde "por que
+               sobrou 2?" sem abrir quatro telas e somar na mão.
+
+               FORMAS DE PAGAMENTO viraram cadastro. Antes era um
+               campo de digitar, e campo de digitar em relatório
+               vira "Pix", "pix" e "PIX" - três linhas no
+               agrupamento para o mesmo dinheiro.
+
+               Cada forma tem tipo (à vista, cartão, a prazo) e
+               parcelas sugeridas: escolher "Cartão de crédito"
+               na venda já preenche 3x.
+
+               Venda, OS e lançamento apontam para o cadastro por
+               um vínculo, não pelo texto. Renomear uma forma
+               atualiza os documentos que a usam, e o relatório
+               continua com uma linha só.
+
+               Forma em uso não se exclui: desative. Ela some das
+               listas e o histórico continua correto. Se um
+               documento antigo usa uma forma desativada, ela
+               continua aparecendo na lista DELE - editar uma
+               venda velha não troca a forma dela sozinho.
+
+Cadastros      seis listas numa aba só: Clientes, Modelos de
+               celular, Peças, Produtos e Fornecedores.
+
+               As peças têm as sete categorias da loja: tela,
+               bateria, placa de carga, flex de carga, câmera,
+               flex de volume e flex power (mais "outra").
+
+               O sistema não deixa excluir um cadastro que está
+               em uso - ele avisa em quantos registros aparece.
+
+Financeiro     três painéis:
+                 Resumo       caixa (a receber, a pagar, saldo
+                              previsto, vencidos), estoque,
+                              vendas, OS e faturamento por mês.
+                 Lançamentos  lista de contas a pagar e a receber,
+                              com filtro, edição, baixa e inclusão
+                              manual.
+                 Histórico    vendas por mês, com faturamento,
+                 de vendas    custo e lucro. Tem busca por número,
+                              cliente, MODELO vendido ou vendedor,
+                              mais intervalo de datas e forma de
+                              pagamento.
+
+Minha conta    (antes "Configurações") trocar a própria senha e,
+               para quem é admin, criar/editar/desativar usuários.
+
+PDV (entrada)  (versão 8) o menu "PDV" abre a tela de entrada: em cima,
+               "Nova venda" e "Nova OS"; uma faixa com o dia de hoje
+               (vendas, OS prontas e em andamento, encomendas da loja
+               online); os atalhos do balcão em lista (cada perfil vê
+               os seus) e, ao lado, as 6 últimas ordens de serviço (Abrir).
+               Nova venda (ou F2, de qualquer tela) abre a venda em
+               tela cheia; "Sair do PDV" volta para a entrada.
+
+Faixa "Banco de teste"  Empresa e regras > Regras > "Este banco é de teste ou
+               demonstração". Ligado, painel, login e loja online mostram
+               uma faixa vermelha no topo. Use na demonstração; na loja de
+               verdade deixe desligado (o padrão).
+
+Loja online    (versão 8) a vitrine na internet, para o CLIENTE:
+               endereço  http://<servidor>/loja  (ex.: localhost:5500/loja).
+               O cliente vê os produtos sem entrar; para encomendar,
+               cria a conta (nome, e-mail, telefone, CPF opcional,
+               senha) ou entra com ela - pela própria vitrine ou pela
+               tela de login do sistema, aba "Cliente" (a aba
+               "Funcionário" é o login de sempre; /Login/index.html#cliente
+               já abre na aba do cliente). A conta do cliente é outra
+               coisa que o login da loja: ela nunca abre o painel, e o
+               login do painel não vale na vitrine.
+               Caminho da encomenda (um passo por vez):
+                 Aguardando pagamento -> Pagamento confirmado ->
+                 Em separação -> Enviado -> Em trânsito ->
+                 Saiu para entrega -> Entregue   (ou Cancelada)
+               - encomendar RESERVA o item: ninguém mais leva, nem pelo
+                 PDV, até o prazo de pagamento (Ajustes). Passou do
+                 prazo sem pagar, a reserva cai sozinha;
+               - o cliente paga por Pix (a chave aparece depois de
+                 encomendar). Não há cobrança automática: o admin
+                 confere o Pix na conta e clica "Confirmar pagamento".
+                 Só aí nasce a VENDA (estoque baixa, conta a receber já
+                 paga no Pix, cliente entra no cadastro de clientes);
+               - a partir do pagamento o cliente vê o RASTREIO: a linha
+                 da loja até o endereço dele, com o passo atual, a hora
+                 de cada passo, a previsão e o código da transportadora.
+                 Quem anda os passos é o admin (Abrir > Avançar);
+               - cancelar encomenda já paga cancela a venda junto (o
+                 item volta ao estoque e o recebido vira estorno). A
+                 venda da loja não cancela pela tela de Vendas.
+               No painel (só admin), menu "Loja online":
+                 Encomendas  a lista, com filtro por situação;
+                 Anúncios    "+ Novo anúncio": escolhe um item do
+                             estoque, título, preço da loja online,
+                             descrição e até 4 fotos (a tela reduz a
+                             foto antes de mandar). Celular vendido sai
+                             da vitrine sozinho; produto reposto entra
+                             como outra entrada (Editar > escolher o
+                             item novo);
+                 Ajustes     aberta/fechada, frete fixo, frete grátis a
+                             partir de, prazos, chave Pix, de onde sai.
+               A loja online nasce FECHADA: para abrir, informe a chave
+               Pix em Ajustes.
+               ATENÇÃO: para o cliente acessar de casa, o servidor tem
+               de estar na internet (hospedagem com HTTPS). Hoje ele roda
+               só nesta máquina (ou na rede da loja, com ENDERECO=0.0.0.0).
+
+
+ESTRUTURA
+---------
+
+    master-restaurado\
+        Login\
+            index.html      tela de login
+            login.css       estilos do login
+            login.js        envia usuário e senha para a API
+        Dashboard\          as telas do painel (html, css e js - o
+                            cabeçalho de cada .js diz o que ele faz;
+                            as contas puras ficam em formato.js,
+                            dre.js e os-regras.js)
+        api\
+            api.php         o roteador da API (só isso)
+            nucleo.php      constantes, domínios, banco, senha,
+                            validação e sessão (usado também pelo
+                            instalador)
+            rotas\          um arquivo por assunto: acesso, painel,
+                            catalogo, estoque, vendas, lancamentos, os
+        Img\
+            logo.jpeg       logotipo
+        dados\
+            index.sqlite            O BANCO DE DADOS
+            estrutura.sql           a estrutura do banco NOVO
+            aplicar-estrutura.php   cria o banco ou atualiza um antigo
+            migracoes\              os passos de atualização, um por
+                                    versão (003-..., 004-...)
+            reparar-dados.php       lista/corrige dados tortos antigos
+            dados-demonstracao.php  enche o sistema para você ver
+            homologacao.php         põe um banco de teste em homologação
+                                    (p / p, faixa, fiscal)
+            erros.log               detalhe dos erros internos, para
+                                    o suporte (criado quando precisa)
+        testes\                 os testes (testes\rodar.bat roda todos)
+            casos\              tabelas de casos usadas por servidor
+                                e tela (mao-de-obra.json)
+            front\              os testes das contas da tela
+                e2e\            os roteiros de tela (Playwright)
+            fixtures\           estruturas antigas (v2, v3) para a
+                                prova de migração
+        memory.md               como o sistema funciona por dentro
+        servidor.php        servidor local em PHP
+        iniciar-servidor.bat
+        abrir-projeto.bat
+        .gitignore          o que nunca vai para o controle de versão
+        LEIA-ME.txt
+
+    dados\backups\       as cópias de segurança que o aplicar-estrutura
+                        e o reparar-dados gravam antes de mexer no
+                        banco (outra pasta: INDEX_CELULARES_BACKUPS).
+    testes\saida\        a saída de cada etapa do testes\rodar.bat.
+
+O projeto é uma pasta só: nada é gravado fora dela. O banco e as
+cópias ficam juntos em dados\; para levar só o código para outra
+máquina, copie tudo menos dados\ e testes\saida\.
+
+Nenhum arquivo de dados\ é apagado sem cópia: as cópias
+index.sqlite.antes-* são as voltas possíveis de uma migração.
+
+Os gráficos são desenhados em SVG escrito à mão (graficos.js), sem
+biblioteca nenhuma. O motivo é simples: o sistema roda na loja, às
+vezes sem internet, e um gráfico que depende de baixar biblioteca
+de fora vira um painel em branco no primeiro dia sem conexão.
+
+
+BANCO DE DADOS
+--------------
+
+O banco é UM arquivo só:
+
+    dados\index.sqlite
+
+Não precisa instalar servidor de banco nenhum: o arquivo É o banco.
+Não existe "banco do PHP" e "banco do Node" - nunca existiu. Havia
+dois programas servidores lendo o mesmo arquivo, e hoje há um.
+
+Backup = copiar esse arquivo. Só isso.
+
+Tabelas de cadastro:
+    usuarios, clientes, fornecedores, modelos, pecas, produtos,
+    servicos, formas_pagamento, aparelhos
+
+Tabelas de movimento:
+    entradas, movimentacoes, ordens_servico, os_itens,
+    os_pagamentos, os_historico, vendas, venda_itens
+
+Financeiro:
+    lancamentos, lancamentos_log (quem mudou o quê)
+
+Acesso:
+    login_tentativas (o limite de 5 tentativas erradas; as da loja
+    online levam o prefixo "loja:")
+
+Loja online (versão 8):
+    loja_ajustes, loja_contas, loja_enderecos, anuncios,
+    anuncio_fotos (as fotos ficam DENTRO do banco: o backup leva junto),
+    encomendas, encomenda_itens, encomenda_eventos (o rastreio)
+
+Views:
+    vw_saidas_estoque   o que saiu por venda e por OS (a regra de
+                        quando a OS segura a peça mora só aqui)
+    vw_entradas_saldo   a conta do saldo (entrou - saiu)
+    vw_entradas         entradas com o nome do item e o saldo
+    vw_vendas           histórico de vendas com lucro e forma
+    vw_faturamentos     o que é faturamento, de balcão ou de oficina
+                        (a regra que impede contar a OS duas vezes)
+    vw_receitas         receita e custo por dia, origem e forma de
+                        pagamento - o Financeiro e os gráficos leem
+                        só daqui
+    vw_itens_faturados  os itens vendidos, pela mesma regra
+
+A versão da estrutura fica gravada no próprio banco
+(PRAGMA user_version = 4). Se o sistema abrir um banco mais antigo
+(um backup restaurado, por exemplo), ele avisa na tela para rodar o
+aplicar-estrutura.php em vez de dar erro.
+
+Não há mais nenhuma tabela de legado no banco: a antiga "estoque"
+foi conferida linha a linha contra as entradas migradas e removida.
+
+As senhas não ficam guardadas em texto puro. A coluna senha_hash
+guarda um PBKDF2-SHA256 no formato:
+
+    pbkdf2$sha256$<iterações>$<salt em hex>$<hash em hex>
+
+Não dá para "ler" a senha de ninguém no banco; se alguém
+esquecer, um admin cadastra uma nova em Configurações.
+
+ATENÇÃO: o servidor só entrega os arquivos das telas (Login\,
+Dashboard\, Img\ e Loja\). Tudo o mais - a pasta dados\ com o banco e as
+cópias, este LEIA-ME, o memory.md, os .bat - responde "página não
+encontrada", por qualquer caminho que se tente na URL.
+
+
+MEXER NO BANCO PELA LINHA DE COMANDO
+------------------------------------
+
+Instalar (máquina nova) ou atualizar um banco antigo - é o MESMO
+comando, e o único:
+
+    php dados\aplicar-estrutura.php
+
+  - Banco não existe: cria tudo e o usuário admin, e mostra UMA vez
+    a senha inicial dele (anote; ela é trocada no primeiro acesso).
+  - Banco antigo (qualquer versão anterior): grava uma cópia de
+    segurança em dados\backups\, roda os
+    passos de dados\migracoes\ que faltam, refaz índices, views e
+    gatilhos e, no fim, compara o banco com um banco novo, objeto por
+    objeto. Tudo numa transação: se der errado ou ficar diferente,
+    nada muda e ele sai com código 1 dizendo o que não bateu.
+  - Banco já na versão atual: confere se ele bate com a estrutura e
+    diz "Nada a fazer". Se não bater, sai com código 1.
+
+Pode rodar quantas vezes quiser. Ele nunca apaga dado e não recria
+forma de pagamento que você apagou.
+
+Para outro arquivo:  php dados\aplicar-estrutura.php caminho\banco.sqlite
+
+Os antigos migrar-*.php foram apagados: tudo é o aplicar-estrutura.
+
+Dados antigos tortos (celular "vendido" que voltou ao estoque, conta
+de compra de R$ 0,00): veja antes com
+
+    php dados\reparar-dados.php
+
+e corrija com  php dados\reparar-dados.php --aplicar  (ele faz uma
+cópia de segurança antes).
+
+
+DADOS DE DEMONSTRAÇÃO
+---------------------
+
+O sistema está LIMPO, pronto para você começar a usar: sem vendas,
+sem ordens de serviço e sem lançamentos. Ficaram só os seus dados
+de verdade - os 7 celulares do estoque antigo, os modelos deles e
+os 2 clientes (Dieimison e Gilberto).
+
+Se quiser ver os relatórios cheios antes de ter movimento real, dá
+para carregar 12 meses de dados de mentira:
+
+    php dados\dados-demonstracao.php criar
+
+E para tirar tudo de novo:
+
+    php dados\dados-demonstracao.php limpar
+
+Tudo que esse script cria leva a marca [DEMO] nas observações, e o
+"limpar" apaga exatamente essas linhas - nada que você tenha
+digitado é tocado. Os 7 celulares que já estavam no sistema antes
+disso continuam lá nos dois casos.
+
+Quando a loja estiver rodando, rode o "limpar" e pode apagar o
+arquivo dados\dados-demonstracao.php.
+
+
+HOMOLOGAÇÃO (BANCO DE TESTE)
+----------------------------
+
+Para testar com um banco de verdade sem risco (a cópia do banco de uma
+loja, a demonstração, o banco de quem testa), coloque a CÓPIA em
+homologação:
+
+    php dados\homologacao.php C:\caminho\da\copia.sqlite
+
+Ele leva o banco à versão atual (pelo aplicar-estrutura), grava uma
+cópia de segurança em dados\backups\ e então:
+  - cria (ou acerta) o acesso rápido  p / p , admin;
+  - liga a regra "Este banco é de teste ou demonstração": a faixa
+    vermelha aparece em todas as telas, e só com ela o p entra sem
+    trocar a senha;
+  - deixa o ambiente fiscal de toda empresa em homologação: nota de
+    teste nunca vai para a produção da SEFAZ.
+Pode rodar de novo: só acerta o que falta. A regra e o fiscal ficam no
+histórico, em nome do p.
+
+Ele recusa o dados\index.sqlite desta pasta, porque na pasta da loja é
+o banco em uso. Numa instalação que é toda de homologação, confirme:
+
+    php dados\homologacao.php dados\index.sqlite --banco-da-pasta
+
+Nunca rode no banco da loja: p / p é uma senha que qualquer um
+adivinha. Para um banco sair da homologação, desligue a regra
+(Empresa e regras > Regras > Sistema) e desative o usuário p
+(Minha conta > Usuários do sistema).
+
+
+COMO ABRIR O BANCO NO DBEAVER
+-----------------------------
+
+1. Abra o DBeaver
+2. Menu  Database > New Database Connection
+3. Escolha  SQLite  e clique em Next
+4. Em "Path", clique em Browse e selecione EXATAMENTE este arquivo:
+
+       ...\master-restaurado\dados\index.sqlite
+
+   CUIDADO: o DBeaver aceita qualquer arquivo aqui, sem conferir.
+   Apontar para servidor.php, para o estrutura.sql ou para
+   qualquer outro arquivo faz a conexão ser criada normalmente e
+   só dar erro quando você abre "Tabelas":
+
+       [SQLITE_NOTADB] File opened that is not a database file
+
+   Esse erro quer dizer só isso: o arquivo escolhido não é o
+   banco. O nome da conexão mostra qual arquivo você escolheu.
+
+5. Se o DBeaver pedir para baixar o driver, clique em Download
+6. Clique em "Test Connection" e depois em Finish
+
+As tabelas aparecem em:  index > Schemas > main > Tables
+
+Consultas para experimentar:
+
+    SELECT * FROM vw_entradas;
+
+    SELECT item, saldo, valor_venda
+      FROM vw_entradas
+     WHERE saldo > 0
+     ORDER BY saldo;
+
+    SELECT numero, cliente, valor_total, lucro
+      FROM vw_vendas
+     WHERE status = 'concluida';
+
+    SELECT tipo, status, SUM(valor)
+      FROM lancamentos
+     GROUP BY tipo, status;
+
+IMPORTANTE: feche a conexão no DBeaver (ou pelo menos evite deixar
+uma edição em aberto) antes de rodar o sistema gravando no banco.
+O SQLite trava o arquivo durante a escrita, e duas escritas ao mesmo
+tempo dão erro de "database is locked".
+
+
+A API (para quem for mexer no código)
+-------------------------------------
+
+Todas as telas conversam com o servidor por estas rotas, sempre em
+JSON e sempre exigindo login (menos a primeira):
+
+    POST   /api/login              {usuario, senha}
+    POST   /api/logout
+    GET    /api/sessao             (traz trocar_senha)
+    GET    /api/config             limites, regra da senha e os
+                                   domínios (status, motivos...)
+                                   com o rótulo de cada valor
+    POST   /api/trocar-senha       {senha_atual, senha_nova}
+    GET    /api/resumo             cards do dashboard (celulares)
+    GET    /api/financeiro         caixa, estoque, vendas e OS (admin)
+    GET    /api/relatorios         série DIÁRIA de 12 meses (a tela
+                                   faz a conta do lucro), ranking,
+                                   contas a vencer, formas de
+                                   pagamento, despesas (admin)
+
+    GET    /api/entradas           ?tipo=celular|peca|produto
+                                   ?disponivel=1  (só com saldo)
+    GET    /api/entradas/{id}      POST /api/entradas
+    PUT    /api/entradas/{id}      DELETE /api/entradas/{id}
+
+    GET    /api/os                 POST /api/os
+    GET    /api/os/{id}            (traz histórico e itens)
+    PUT    /api/os/{id}            DELETE /api/os/{id}
+
+    GET    /api/vendas             POST /api/vendas
+    GET    /api/vendas/{id}        (traz itens e lançamentos)
+    PUT    /api/vendas/{id}        DELETE /api/vendas/{id}
+
+    GET    /api/movimentacoes      ?peca_id= ?produto_id= ?entrada_id=
+    POST   /api/movimentacoes      DELETE /api/movimentacoes/{id}
+
+    GET    /api/lancamentos        ?tipo= ?status= ?de= ?ate=   (admin)
+    POST   /api/lancamentos        PUT /api/lancamentos/{id}
+    DELETE /api/lancamentos/{id}   (só manual E pendente; quitado
+                                   vira "cancelado" pelo PUT)
+
+    GET/POST/PUT/DELETE em:
+        /api/clientes    /api/fornecedores  /api/modelos
+        /api/pecas       /api/produtos      /api/servicos
+        /api/formas-pagamento
+    (GET com id devolve um registro, ou 404)
+
+    DELETE em qualquer rota: só admin.
+    Erro sempre volta como {"ok": false, "erro": "<frase para a tela>"}.
+
+    GET    /api/usuarios           POST /api/usuarios   (só admin)
+    PUT    /api/usuarios/{id}      DELETE /api/usuarios/{id}
+    POST   /api/usuarios/{id}/destravar   apaga as tentativas erradas
+
+    Toda requisição que muda dado precisa de Content-Type
+    application/json e vir de uma página do próprio sistema (Origin,
+    ou Referer, do mesmo endereço). O navegador já faz isso sozinho;
+    um formulário de outro site, ou um script sem esses cabeçalhos,
+    recebe 403. O cookie da sessão é HttpOnly e SameSite=Strict.
+
+    Venda, OS e lançamento vêm com pode_editar_valor, pode_cancelar e
+    pode_excluir, e a OS com status_permitidos: a tela só mostra o
+    que o servidor aceita.
+
+
+RODAR OS TESTES
+---------------
+
+    testes\rodar.bat
+
+Cria um banco NOVO temporário (o dados\index.sqlite da loja não é
+tocado), sobe o servidor numa porta livre e roda tudo: as regras do
+servidor (OS, senha, domínios = CHECK do banco), as regras de estoque,
+os relatórios sem dupla contagem, a migração de bancos antigos, a
+prova de que uma mudança de DEFAULT/CHECK nunca passa sem ser
+aplicada, a suíte da API (Node), a conferência de integridade do
+banco, os testes das contas da tela e os roteiros de tela num
+navegador de verdade (Playwright, com servidor e banco próprios).
+
+O resultado é um destes três:
+
+    TUDO VERDE                        código 0: tudo rodou e passou
+    VERDE COM ETAPA PULADA (e2e)      código 0, MAS a tela não foi
+                                      testada (Playwright não instalado)
+    FALHOU                            código 1, com a etapa que falhou
+
+Arquivo de teste que falta é falha, nunca "nada a rodar". A saída de
+cada etapa fica em testes\saida\ (outra pasta: INDEX_CELULARES_SAIDA_TESTES).
+
+Precisa do PHP e do Node.js; para os roteiros de tela, do Playwright
+(npm install playwright e npx playwright install chromium, ou a
+variável E2E_PLAYWRIGHT com o caminho do pacote). Para incluir na
+prova de migração os backups reais da loja (são copiados; o original
+nunca é aberto para escrita):
+
+    set INDEX_CELULARES_BANCOS_ANTIGOS=C:\pasta\dos\backups
+    testes\rodar.bat
+
+
+HTTPS NA REDE (opcional)
+------------------------
+
+Em HTTP, quem estiver na mesma rede pode ler a senha do login e o
+cookie da sessão. Se o sistema for aberto para outros computadores da
+loja, o recomendado é colocar um proxy com HTTPS na frente do PHP
+(por exemplo Caddy ou nginx com certificado da rede interna),
+repassando para http://127.0.0.1:5500 e mandando o cabeçalho
+X-Forwarded-Proto: https. O sistema percebe e passa a marcar o cookie
+da sessão como Secure. O PHP continua escutando só em 127.0.0.1
+(ENDERECO=127.0.0.1 no iniciar-servidor.bat), e só o proxy atende a
+rede.
+
+
+O QUE MUDOU NA 4ª REVISÃO (o banco continua na versão 4)
+--------------------------------------------------------
+
+1. Um aparelho, uma unidade: depois da recompra de um celular, a
+   venda antiga não pode mais ser cancelada/excluída nem a OS que o
+   vendeu sair de "entregue" (a mensagem aponta a recompra).
+2. Só o admin escolhe a forma de pagamento padrão.
+3. OS recusada também apaga a senha do aparelho. Senhas antigas que
+   ficaram guardadas: php dados\reparar-dados.php (lista) e
+   --aplicar (apaga), sempre com cópia de segurança.
+4. Conflito ao salvar a OS: "Nada foi gravado. Use Recarregar e
+   confira."
+5. testes\rodar.bat roda também os roteiros de tela e só diz TUDO
+   VERDE quando nada foi pulado.
+
+
+O QUE MUDOU NA 3ª REVISÃO (versão 4 do banco)
+---------------------------------------------
+
+ANTES DE USAR: rode  php dados\aplicar-estrutura.php  (cópia de
+segurança fora do projeto + atualização para a versão 4).
+
+1. Login: o bloqueio é por login (o Caps Lock de um não tranca os
+   outros), avisa quantas tentativas restam e o admin destrava.
+2. Senha: letras e números, sem o login, sem repetição; usuário novo
+   ou com senha redefinida troca no primeiro acesso.
+3. IMEI: a loja pode recomprar o celular que vendeu (só é recusado o
+   IMEI que ainda está no estoque); o dígito verificador é conferido.
+4. Venda já paga que muda de desconto: o pago continua pago; o que
+   falta vira uma conta a receber, ou o que sobra vira uma devolução
+   ao cliente (a pagar). Ninguém precisa "despagar" nada.
+5. Forma de pagamento padrão explícita (Dinheiro, ou a que o admin
+   marcar); forma nova entra no fim da lista.
+6. A OS faz a conta da mão de obra pela mesma regra na tela e no
+   servidor.
+7. Brinde/cortesia sai por Movimentar estoque; OS de valor zero não
+   gera venda.
+8. Senha do aparelho apagada quando a OS é entregue ou cancelada.
+9. Balcão e técnico não veem custo em vendas e OS e não estornam.
+10. Cadastros com nome único ignoram acento ("cartao de credito" =
+    "Cartão de crédito"); homônimo sem telefone pode ser cadastrado.
+
+
+O QUE MUDOU NA REVISÃO DE OUTUBRO (versão 3 do banco)
+-----------------------------------------------------
+
+ANTES DE USAR: rode uma vez  php dados\aplicar-estrutura.php
+(ele faz cópia de segurança e atualiza o banco). Sem isso o sistema
+avisa que o banco está numa versão antiga.
+
+1. Segurança: o banco e os arquivos internos não podem mais ser
+   baixados pelo navegador; senha fraca obriga a trocar; 5 erros de
+   senha travam o login por 15 minutos; sessão de 8 horas de verdade;
+   técnico e balcão não veem o financeiro nem excluem.
+2. Estoque nunca fica negativo: a mesma peça em duas linhas da venda
+   ou da OS é somada antes de conferir o saldo; quantidade 0,
+   negativa ou quebrada é recusada (antes virava 1 sem avisar).
+3. Valores: nada negativo, nada acima de R$ 10 milhões, parcelas de
+   1 a 24 e nenhuma parcela abaixo de R$ 0,01. Vencimento em 31/01
+   parcelado vai para 28/02 e 31/03 (antes pulava fevereiro).
+4. Venda cancelada e OS cancelada são definitivas. Cancelar/excluir
+   uma venda paga estorna a conta (fica "cancelado", com o motivo
+   no log do lançamento).
+5. OS: com o status "pronta" ou "entregue", peças e serviços travam
+   no servidor; salvar só o status não apaga mais o defeito e as
+   observações; mudar o valor de uma OS com pagamento dividido pede
+   para refazer a divisão; duas pessoas editando a mesma OS - a
+   segunda é avisada para reabrir.
+6. Financeiro: só se exclui lançamento MANUAL e PENDENTE. O de venda,
+   OS ou compra não tem valor editável (mude pelo documento).
+7. IMEI: 15 dígitos e único entre os celulares do estoque.
+8. Cliente com o mesmo nome E o mesmo telefone de outro é recusado.
+
+
+O QUE MUDOU AGORA (25/08)
+-------------------------
+
+1. SERVIÇOS viraram cadastro (Cadastros > Serviços). Ponha ali o que
+   a oficina faz e o preço de tabela. Na OS, o botão "+ Serviço"
+   traz o preço pronto - e dá para cobrar outro valor no conserto
+   difícil. A mão de obra passa a ser a soma dos serviços lançados.
+
+   Os 8 serviços mais comuns já vieram cadastrados, com preço
+   zerado: preço é decisão sua, e um número inventado viraria
+   orçamento errado. Abra cada um e preencha.
+
+2. A OS aceita MAIS DE UMA FORMA DE PAGAMENTO. Metade em dinheiro e
+   metade no débito viram duas linhas no financeiro, cada uma com a
+   sua forma - agora a conciliação fecha com o extrato.
+
+   O rodapé mostra quanto falta o tempo todo, e o botão Salvar só
+   libera quando a soma bate com o valor final da OS.
+
+3. A situação da peça agora sai do SALDO. Peça vendida aparecia como
+   "Stock Ready" mesmo com saldo zero; agora mostra "Esgotado".
+   Celular continua com as situações de sempre, porque é unitário.
+
+
+O QUE MUDOU NA VERSÃO 2
+-----------------------
+
+1. A aba Estoque virou ENTRADAS, com três tipos (celular, peça e
+   produto) e um formulário próprio para cada um. Os 7 aparelhos
+   que estavam no estoque viraram entradas do tipo celular, com os
+   valores e a situação preservados.
+
+2. Peça e produto agora têm QUANTIDADE e saldo. O saldo é
+   calculado, não digitado: entrou menos vendido menos usado em
+   OS. Usar uma peça numa OS ou vender dá baixa sozinho; cancelar
+   a OS ou a venda devolve.
+
+3. A OS parou de aceitar texto livre. Peças vêm do estoque.
+   Cliente e modelo do celular vêm da lista, e os dois podem ser
+   cadastrados ali mesmo quando é a primeira vez na loja - sem
+   precisar sair da OS, abrir Cadastros e voltar.
+
+4. O valor das peças da OS deixou de ser um número digitado: é a
+   soma dos itens lançados.
+
+5. Nasceu a aba VENDAS, com histórico, lucro por venda e
+   cancelamento que devolve o estoque.
+
+6. O FINANCEIRO deixou de ser só leitura. Agora tem lançamentos a
+   pagar e a receber, criados sozinhos (venda, OS entregue, compra
+   de fornecedor) ou na mão, com baixa, edição e filtros.
+
+7. A aba Clientes virou CADASTROS, com cinco listas: Clientes,
+   Modelos de celular, Peças, Produtos, Fornecedores e
+               Formas de pagamento.
+
+8. Os 7 modelos criados na migração vieram de um campo de texto
+   livre que misturava modelo e cor ("iphone 8 plus branco"). O
+   sistema funciona com eles como estão, mas vale arrumar em
+   Cadastros > Modelos de celular quando sobrar tempo.
+
+9. A versão Node da API saiu do projeto, junto com a tabela de
+   legado do banco. Detalhes na seção abaixo.
+
+
+ONDE FOI PARAR O NODE (e o resto do legado)
+-------------------------------------------
+
+Até a versão 1, o projeto tinha DUAS implementações do mesmo
+servidor - uma em PHP e uma em Node.js - lendo o mesmo arquivo de
+banco. Na versão 2, só a de PHP foi atualizada, e manter a outra
+por perto só criava a dúvida de qual estava valendo.
+
+Foi tudo movido para fora do projeto, e não apagado, em:
+
+    Desktop\Dieimison\_backup-antes-da-v2\
+
+        banco-versao-1.sqlite      o banco como estava antes da v2
+        estrutura-versao-1.sql     a estrutura da v1
+        api.js                     a API em Node
+        servidor.js                o servidor em Node
+        migrar-v2.php              o script que fez a migração
+        index.sqlite.seguranca-antes-da-limpeza
+
+Também foi removida do banco a tabela estoque_v1 (a "estoque"
+antiga, renomeada durante a migração). Antes de removê-la, as sete
+linhas foram comparadas uma a uma com as entradas migradas -
+modelo, situação, valor investido, valor de venda, IMEI e
+observações batiam em todas.
+
+Se você não pretende voltar ao Node nem restaurar o banco antigo,
+essa pasta pode ser apagada. Ela não é lida pelo sistema.
+
+
+O QUE FOI CORRIGIDO NA MIGRAÇÃO DO MAC (versão 1)
+-------------------------------------------------
+
+1. Removidos os arquivos ocultos do macOS (._* e .DS_Store).
+
+2. Corrigido o nome da pasta, que continha um caractere inválido
+   para o Windows.
+
+3. O arquivo Dashboard\dashboard.html estava truncado (cortado no
+   meio da tabela Stock Check). Foram fechadas as tags e
+   acrescentado o rodapé.
+
+4. O login passou a valer: antes, qualquer senha entrava.
+
+5. Os botões do menu passaram a abrir telas de verdade, com
+   cadastro, edição e exclusão gravando no banco.
+
+6. Os números do dashboard passaram a vir do banco, e a data
+   deixou de ser "14 Março, 2025" fixa no HTML.

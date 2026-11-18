@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Assistência Técnica Index Celulares</title>
+    <link rel="icon" href="../Img/logo.jpeg">
+    <link rel="stylesheet" href="login.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Faixa "Banco de teste" (Dashboard/ambiente.js): so aparece quando o banco esta marcado como de teste -->
+    <div data-faixa-teste hidden class="faixa-teste-login"></div>
+
+    <!-- Elementos 3D de fundo -->
+    <div class="bg-elements">
+        <div class="tech-item">
+            <div class="phone-icon"></div>
+        </div>
+        <div class="tech-item">
+            <div class="chip-icon"></div>
+        </div>
+        <div class="tech-item">
+            <div class="tool-icon"></div>
+        </div>
+        <div class="tech-item">
+            <div class="screen-icon"></div>
+        </div>
+        <div class="tech-item">
+            <div class="gear-icon"></div>
+        </div>
+    </div>
+
+    <div class="login-container">
+        <div class="logo">
+            <img src="../Img/logo.jpeg" alt="Index Celulares Logo">
+        </div>
+        
+        <!-- Quem esta entrando: o funcionario vai para o painel; o cliente, para a loja online (v8). -->
+        <div class="abas-login" role="tablist" aria-label="Quem está entrando">
+            <button type="button" role="tab" class="aba-login ativa" aria-selected="true" data-modo="funcionario">Funcionário</button>
+            <button type="button" role="tab" class="aba-login" aria-selected="false" data-modo="cliente">Cliente</button>
+        </div>
+
+        <h1 id="tituloLogin">Assistência Técnica</h1>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="username" id="rotuloUsuario">USUÁRIO</label>
+                <input type="text" id="username" placeholder="Digite seu código de técnico" autocomplete="username" required>
+                <span class="input-icon" id="iconeUsuario">👤</span>
+            </div>
+
+            <div class="input-group">
+                <label for="password">SENHA</label>
+                <input type="password" id="password" placeholder="Digite sua senha" autocomplete="current-password" required>
+                <span class="input-icon">🔒</span>
+            </div>
+
+            <button type="submit">Acessar Sistema</button>
+
+            <div id="errorMessage" class="error-message">
+                Credenciais inválidas. Verifique seu usuário e senha.
+            </div>
+        </form>
+
+        <p class="cliente-links" id="clienteLinks" hidden>
+            Ainda não tem conta? <a href="../Loja/index.html#/criar-conta">Criar conta</a>
+            <span aria-hidden="true">·</span> <a href="/loja">Ver a loja sem entrar</a>
+        </p>
+
+        <div class="footer">
+            © 2025 Index Celulares • Sistema de Gestão de Assistência Técnica
+        </div>
+    </div>
+
+    <script src="../Dashboard/ambiente.js"></script>
+    <script src="../Dashboard/formato.js"></script>
+    <script src="login.js"></script>
+</body>
+</html>
